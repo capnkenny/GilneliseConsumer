@@ -27,6 +27,9 @@ else if (args.Length == 1)
 
 var cards = await c.GetCards(result ?? string.Empty);
 
+Console.WriteLine($"{cards.Count()} cards retrieved.");
+
+Console.WriteLine();
 Console.WriteLine();
 Console.WriteLine("Writing Data...");
 
@@ -38,7 +41,6 @@ using(StreamWriter sw = new StreamWriter(fs))
     {
         OutputCard oc = (OutputCard)card;
         cardList.Add(oc);
-        Console.WriteLine($"Processing - {card.CardNumber}...");
     }
     sw.WriteLine(JsonSerializer.Serialize(cardList, new JsonSerializerOptions { WriteIndented = true }));
 
