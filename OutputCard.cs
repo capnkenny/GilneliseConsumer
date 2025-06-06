@@ -37,23 +37,33 @@ namespace SVEDB_Extract
         public int Defense { get; set; }
 
         [JsonPropertyName("limitedToCount")]
-        public int limitedToCount { get; set; }
+        public int LimitedToCount { get; set; }
+
+        [JsonPropertyName("doubleSided")]
+        public bool DoubleSided { get; set; }
+
+        [JsonPropertyName("AltImgUrl")]
+        public string AltImgUrl { get; set; }
+
+        [JsonPropertyName("AltName")]
+        public string AltName { get; set; }
 
         
 
-        public static explicit operator OutputCard(Card c){ 
+        public static explicit operator OutputCard(Card c)
+        {
             int atk = 0;
             int def = 0;
-            
+
             CardMetaData.Metadata.TryGetValue(c.CardNumber, out string[]? meta);
-            if(meta != null)
+            if (meta != null)
             {
-                if(!int.TryParse(meta[0], out atk))
+                if (!int.TryParse(meta[0], out atk))
                     atk = -1;
-                if(!int.TryParse(meta[1], out def))
+                if (!int.TryParse(meta[1], out def))
                     def = -1;
             }
-            
+
             return new()
             {
                 Id = c.CardNumber,
@@ -64,9 +74,12 @@ namespace SVEDB_Extract
                 Name = c.Name,
                 ImgUrl = $"https://en.shadowverse-evolve.com/wordpress/wp-content/images/cardlist/{c.Img}",
                 Cost = c.GParam.G0,
-                limitedToCount = c.Max,
+                LimitedToCount = c.Max,
                 Attack = atk,
-                Defense = def
+                Defense = def,
+                DoubleSided = c.CustomParm.BothSides,
+                AltImgUrl = string.IsNullOrWhiteSpace(c.CustomParm.RevImage) ? string.Empty : $"https://en.shadowverse-evolve.com/wordpress/wp-content/images/cardlist/{c.CustomParm.RevImage}",
+                AltName = string.IsNullOrWhiteSpace(c.CustomParm.RevName) ? string.Empty : c.CustomParm.RevName,
             };
         }
 

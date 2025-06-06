@@ -4,19 +4,33 @@ using SVEDB_Extract;
 
 Client c = new Client();
 
+string? result = null;
 Console.WriteLine("Shadowverse Evolve Card DB Builder\n");
 
-Console.Write("Enter the card set code for the cards you want to build, or enter A for all: ");
-
-string? result = Console.ReadLine();
-
+if (args.Length <= 0)
+{
+    Console.Write("Enter the card set code for the cards you want to build, or enter A for all: ");
+    result = Console.ReadLine();
+}
+else if (args.Length == 1)
+{
+    if (args[0].Equals("ci"))
+    {
+        result = "A";
+        Console.WriteLine("Running in CI mode...");
+    }
+    else
+    {
+        result = args[0];
+    }
+}
 
 var cards = await c.GetCards(result ?? string.Empty);
 
 Console.WriteLine();
 Console.WriteLine("Writing Data...");
 
-using(var fs = File.Create("cards.txt"))
+using(var fs = File.Create("cards.json"))
 using(StreamWriter sw = new StreamWriter(fs))
 {
     List<OutputCard> cardList = new();
@@ -24,9 +38,9 @@ using(StreamWriter sw = new StreamWriter(fs))
     {
         OutputCard oc = (OutputCard)card;
         cardList.Add(oc);
-//        sw.WriteLine($"{card.CardNumber} - {card.Name}\n\t{card.Affiliation} - {card.CardKind} - G: {JsonSerializer.Serialize(card.GParam)} - P: {JsonSerializer.Serialize(card.PParam)}");
+        Console.WriteLine($"Processing - {card.CardNumber}...");
     }
-    sw.WriteLine(JsonSerializer.Serialize(cardList));
+    sw.WriteLine(JsonSerializer.Serialize(cardList, new JsonSerializerOptions { WriteIndented = true }));
 
     sw.Flush();
 }

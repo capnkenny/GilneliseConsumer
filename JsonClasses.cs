@@ -3,7 +3,7 @@
 namespace SVEDB_Extract
 {
 
-    public class Card
+    public class Card : IEquatable<Card>
     {
         [JsonPropertyName("id")]
         public int Id { get; set; }
@@ -49,6 +49,14 @@ namespace SVEDB_Extract
 
         [JsonPropertyName("g_param")]
         public GParam GParam { get; set; }
+
+        [JsonPropertyName("custom_param")]
+        public CustomParam CustomParm { get; set; }
+
+        public bool Equals(Card? other)
+        {
+            return CardNumber.Equals(other?.CardNumber);
+        }
     }
 
     public class PParam
@@ -117,4 +125,17 @@ namespace SVEDB_Extract
         public int G9 { get; set; }
     }
 
+    public class CustomParam
+    {
+        [JsonPropertyName("is_bothsides")]
+        public bool BothSides { get; set; }
+
+        [JsonPropertyName("rev_name")]
+        public string? RevName { get; set; }
+
+        [JsonPropertyName("rev_img")]
+        public string? RevImage { get; set; }
+    }
+
+    
 }

@@ -11,8 +11,13 @@ namespace SVEDB_Extract
         private HttpClient client;
         private List<Card> cards;
 
-        public static string[] SupportedList = 
-        { 
+        public string[] MetadataTypesToIgnore = {
+            "Spell",
+            "Amulet"
+        };
+
+        public static string[] SupportedList =
+        {
             "BP01",
             "BP02",
             "BP03",
@@ -20,6 +25,8 @@ namespace SVEDB_Extract
             "BP05",
             "BP06",
             "BP07",
+            "BP08",
+            "BP09",
             "SD01",
             "SD02",
             "SD03",
@@ -31,7 +38,7 @@ namespace SVEDB_Extract
             "CSD01",
             "CSD02A",
             "CSD02B",
-            "CSD02C", 
+            "CSD02C",
         };
 
         public Client()
@@ -86,17 +93,17 @@ namespace SVEDB_Extract
                 HttpResponseMessage response = await client.SendAsync(request);
                 response.EnsureSuccessStatusCode();
                 List<Card> cardList = await response.Content.ReadFromJsonAsync<List<Card>>() ?? new();
-                if(cardList.Count > 0)
-                    Console.WriteLine($"\t- {string.Join(", ", cardList.Select(c => c.CardNumber))}");
-                            
+                // if(cardList.Count > 0)
+                //     Console.WriteLine($"\t- {string.Join(", ", cardList.Select(c => c.CardNumber))}");
+
                 try
                 {
                     while (cardList.Count > 0)
                     {
                         cards.AddRange(cardList);
-                        await Parallel.ForEachAsync(cardList, async (asyncCard, token) => { await GetCardMetaData(client, asyncCard.CardNumber); });
-                        Console.WriteLine($"\t- {string.Join(", ", cardList.Select(c => c.CardNumber))}");
-                        
+                        cards = cards.Distinct().ToList();
+                        await Parallel.ForEachAsync(cardList, async (asyncCard, token) => { await GetCardMetaData(client, asyncCard); });
+
                         cardRequest.Page++;
                         json = JsonSerializer.Serialize(cardRequest);
                         request = new HttpRequestMessage(HttpMethod.Post, "https://decklog-en.bushiroad.com/system/app/api/search/6");
@@ -107,8 +114,17 @@ namespace SVEDB_Extract
                         response = await client.SendAsync(request);
                         response.EnsureSuccessStatusCode();
                         cardList = await response.Content.ReadFromJsonAsync<List<Card>>() ?? new List<Card>();
+                        
                     }
-                    Console.WriteLine();
+                    cards = cards.OrderBy((card) => card.CardNumber).ToList();
+                    Console.WriteLine("\nFetched all cards - retrieving metadata...");
+
+                    foreach (var c in cardList)
+                    {
+                        await GetCardMetaData(client, c);
+                        await Task.Delay(250);
+                    }
+                    
                 }
                 catch (Exception ex)
                 {
@@ -119,12 +135,17 @@ namespace SVEDB_Extract
             return cards;
         }
 
-        private async Task GetCardMetaData(HttpClient client, string cardNumber)
+        private async Task GetCardMetaData(HttpClient client, Card card)
         {
+            if (MetadataTypesToIgnore.Any((item) => card.CardKind.Contains(item)))
+            {
+                return;
+            }
+
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri($"https://en.shadowverse-evolve.com/cards/?cardno={cardNumber}EN"),
+                RequestUri = new Uri($"https://en.shadowverse-evolve.com/cards/?cardno={card.CardNumber}"),
             };
 
             const string statusLookup = "<div class=\"status\">";
@@ -150,12 +171,12 @@ namespace SVEDB_Extract
                     {
                         def = sa.Groups[0].Value.Replace(@"Defense</span>", "").Replace("</span>", "");
                     }
-                    CardMetaData.Metadata.Add(cardNumber, new string[]{ atk, def });
+                    CardMetaData.Metadata.Add(card.CardNumber, new string[]{ atk, def });
                     return;
                 }
                 else
                 {
-                    CardMetaData.Metadata.Add(cardNumber, new string[]{ "", "" });
+                    CardMetaData.Metadata.Add(card.CardNumber, new string[]{ "", "" });
                     return;
                 }
             }
@@ -164,13 +185,13 @@ namespace SVEDB_Extract
 
         private void PrepareHeaders(HttpRequestMessage request)
         {
-            request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0");
+            request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0");
             request.Headers.Add("Accept", "application/json, text/plain, */*");
             request.Headers.Add("Accept-Language", "en-US,en;q=0.5");
             request.Headers.Add("Origin", "https://decklog-en.bushiroad.com");
             request.Headers.Add("Connection", "keep-alive");
             request.Headers.Add("Referer", "https://decklog-en.bushiroad.com/create?c=6");
-            request.Headers.Add("Cookie", "CookieConsent={stamp:%273DYKV73AFO5pbjzWoPswMtCoN6lk1uQ2so6frmuwtakIxpvXO/uRgg==%27%2Cnecessary:true%2Cpreferences:true%2Cstatistics:true%2Cmarketing:true%2Cmethod:%27explicit%27%2Cver:1%2Cutc:1714065861850%2Cregion:%27us-34%27}; _ga=GA1.2.1836621861.1714065862; _ga_Z2VN1PDQ0T=GS1.1.1732588616.5.1.1732588765.60.0.0; _ga=GA1.3.1836621861.1714065862; CAKEPHP=sd8jc1ng0n89hgttesek8s8idd; _gid=GA1.3.553970915.1732588618; _gid=GA1.2.553970915.1732588618");
+            request.Headers.Add("Cookie", "CookieConsent={stamp:%273DYKV73AFO5pbjzWoPswMtCoN6lk1uQ2so6frmuwtakIxpvXO/uRgg==%27%2Cnecessary:true%2Cpreferences:true%2Cstatistics:true%2Cmarketing:true%2Cmethod:%27explicit%27%2Cver:1%2Cutc:1714065861850%2Cregion:%27us-34%27};");
             request.Headers.Add("Sec-Fetch-Dest", "empty");
             request.Headers.Add("Sec-Fetch-Mode", "cors");
             request.Headers.Add("Sec-Fetch-Site", "same-origin");
