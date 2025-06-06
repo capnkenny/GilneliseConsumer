@@ -35,6 +35,10 @@ jobs:
             - run: dotnet run ci
               name: Run SVEDB_Extract
 
+            - uses: qoomon/actions--setup-git@v1
+              with:
+                user: committer
+
             - run: git add cards.json
             - run: git commit -m "Updating cards.json file"
             - run: git push
