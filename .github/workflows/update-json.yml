@@ -1,7 +1,5 @@
 name: Update JSON file
 on:
-    push:
-        branches: [main]
 
     schedule:
         - cron: "0 5 * * 1"
@@ -32,7 +30,7 @@ jobs:
               name: Remove old cards file
               shell: pwsh
 
-            - run: dotnet run ci
+            - run: dotnet run --property WarningLevel=0 ci
               name: Run SVEDB_Extract
 
             - uses: qoomon/actions--setup-git@v1
