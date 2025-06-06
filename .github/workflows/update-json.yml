@@ -1,0 +1,39 @@
+name: Update JSON file
+on:
+    push:
+        branches: [main]
+
+    schedule:
+        - cron: "0 5 * * 1"
+    workflow_dispatch:
+
+
+
+jobs:
+    update-json:
+        permissions:
+            actions: write
+            contents: write
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              name: Checkout Repo
+
+            - uses: actions/setup-dotnet@v4
+              with:
+                dotnet-version: "8"
+            
+            - run: dotnet restore
+
+            - run: dotnet build --configuration Release --no-restore
+
+            - run: rm cards.json
+              name: Remove old cards file
+
+            - run: dotnet run ci
+              name: Run SVEDB_Extract
+
+            - run: git add cards.json
+            - run: git commit -m "Updating cards.json file"
+            - run: git push
+
