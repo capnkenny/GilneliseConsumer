@@ -27,8 +27,10 @@ jobs:
 
             - run: dotnet build --configuration Release --no-restore
 
-            - run: rm cards.json
+            - run: |
+                if(Test-Path -Path cards.json) { rm cards.json }
               name: Remove old cards file
+              shell: pwsh
 
             - run: dotnet run ci
               name: Run SVEDB_Extract
