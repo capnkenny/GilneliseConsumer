@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 
@@ -30,6 +31,9 @@ namespace SVEDB_Extract
         [JsonPropertyName("cost")]
         public int Cost { get; set; }
 
+        [JsonPropertyName("description")]
+        public string Description { get; set; }
+
         [JsonPropertyName("atk")]
         public int Attack { get; set; }
 
@@ -42,26 +46,47 @@ namespace SVEDB_Extract
         [JsonPropertyName("doubleSided")]
         public bool DoubleSided { get; set; }
 
-        [JsonPropertyName("AltImgUrl")]
+        [JsonPropertyName("altImgUrl")]
         public string AltImgUrl { get; set; }
 
-        [JsonPropertyName("AltName")]
+        [JsonPropertyName("altName")]
         public string AltName { get; set; }
 
-        
+        [JsonPropertyName("altAtk")]
+        public int AltAttack { get; set; }
+
+        [JsonPropertyName("altDef")]
+        public int AltDefense { get; set; }
+
+        [JsonPropertyName("altDescription")]
+        public string AltDescription { get; set; }
+
+
 
         public static explicit operator OutputCard(Card c)
         {
-            int atk = 0;
-            int def = 0;
+            int atk = -1;
+            int def = -1;
+            int altAtk = -1;
+            int altDef = -1;
+            string desc = string.Empty;
+            string altDesc = string.Empty;
 
             CardMetaData.Metadata.TryGetValue(c.CardNumber, out string[]? meta);
             if (meta != null)
             {
-                if (!int.TryParse(meta[0], out atk))
-                    atk = -1;
-                if (!int.TryParse(meta[1], out def))
-                    def = -1;
+                _ = int.TryParse(meta[0], out atk);
+                _ = int.TryParse(meta[1], out def);
+
+                if (meta.Length >= 3)
+                {
+                    desc = meta[2];
+
+                    _ = int.TryParse(meta[3], out altAtk);
+                    _ = int.TryParse(meta[4], out altDef);
+
+                    altDesc = meta[5];
+                }
             }
 
             return new()
@@ -80,6 +105,10 @@ namespace SVEDB_Extract
                 DoubleSided = c.CustomParm.BothSides,
                 AltImgUrl = string.IsNullOrWhiteSpace(c.CustomParm.RevImage) ? string.Empty : $"https://en.shadowverse-evolve.com/wordpress/wp-content/images/cardlist/{c.CustomParm.RevImage}",
                 AltName = string.IsNullOrWhiteSpace(c.CustomParm.RevName) ? string.Empty : c.CustomParm.RevName,
+                Description = desc,
+                AltDescription = altDesc,
+                AltAttack = altAtk,
+                AltDefense = altDef
             };
         }
 
@@ -87,7 +116,7 @@ namespace SVEDB_Extract
 
     public static class CardMetaData
     {
-        public static Dictionary<string, string[]> Metadata = new();
+        public static ConcurrentDictionary<string, string[]> Metadata = new();
     }
 
 

@@ -157,8 +157,12 @@ namespace SVEDB_Extract
                 //<span class="heading heading-Power">Attack
                 if(body.Contains(statusLookup))
                 {
-                    string atk = "";
-                    string def = "";
+                    string atk = string.Empty;
+                    string def = string.Empty;
+                    string filteredDesc = string.Empty;
+                    string secondAtk = string.Empty;
+                    string secondDef = string.Empty;
+                    string altFilteredDesc = string.Empty;
 
                     var sa = Regex.Match(body, @"Attack<\/span>\d+<\/span>");
                     if(sa.Success)
@@ -171,16 +175,100 @@ namespace SVEDB_Extract
                     {
                         def = sa.Groups[0].Value.Replace(@"Defense</span>", "").Replace("</span>", "");
                     }
-                    CardMetaData.Metadata.Add(card.CardNumber, new string[]{ atk, def });
+
+                    
+                    sa = Regex.Match(body, @"(<div class=""detail"">\n<p>)[\s\S]+(<\/p>)");
+                    if (sa.Success)
+                    {
+                        var descIndexEnd = sa.Groups[0].Value.IndexOf("</p>");
+
+                        var desc = SanitizeDescription(sa.Groups[0].Value.Substring(0, descIndexEnd));
+                            
+                        filteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
+                    }
+
+                    if (card.CustomParm.BothSides)
+                    {
+                        sa = Regex.Match(body, @"(<div class=""cardlist-Detail_Box_Inner"">)[\s\S]+(<\/div>)");
+                        if (sa.Groups.Count > 1)
+                        {
+                            var secondDescriptionHtmlIndex = sa.Groups[0].Value.LastIndexOf(@"<div class=""cardlist-Detail_Box_Inner"">");
+                            var secondDescriptionBody = sa.Groups[0].Value.Substring(secondDescriptionHtmlIndex);
+
+                            sa = Regex.Match(secondDescriptionBody, @"Attack<\/span>\d+<\/span>");
+                            if (sa.Success)
+                            {
+                                secondAtk = sa.Groups[0].Value.Replace(@"Attack</span>", "").Replace("</span>", "");
+                            }
+
+                            sa = Regex.Match(body, @"Defense<\/span>\d+<\/span>");
+                            if (sa.Success)
+                            {
+                                secondDef = sa.Groups[0].Value.Replace(@"Defense</span>", "").Replace("</span>", "");
+                            }
+
+                            sa = Regex.Match(body, @"(<div class=""detail"">\n<p>)[\s\S]+(<\/p>)");
+                            if (sa.Success)
+                            {
+                                var descIndexEnd = sa.Groups[0].Value.IndexOf("</p>");
+
+                                var desc = SanitizeDescription(sa.Groups[0].Value.Substring(0, descIndexEnd));
+
+                                altFilteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
+                            }
+
+                        }
+                    }
+
+                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[]{ atk, def, filteredDesc, secondAtk, secondDef, altFilteredDesc });
+
                     return;
                 }
                 else
                 {
-                    CardMetaData.Metadata.Add(card.CardNumber, new string[]{ "", "" });
+                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[]{ "", "" });
                     return;
                 }
             }
 
+        }
+
+        private string SanitizeDescription(string cardDescriptionHtml)
+        {
+            string classFiltered = cardDescriptionHtml
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_elf.png\" alt=\"[forestcraft]\" />", "Forestcraft")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_royal.png\" alt=\"[swordcraft]\" />", "Swordcraft")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_nightmare.png\" alt=\"[abysscraft]\" />", "Abysscraft")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_dragon.png\" alt=\"[dragoncraft]\" />", "Dragoncraft")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_bishop.png\" alt=\"[havencraft]\" />", "Havencraft")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_neutral.png\" alt=\"[neutral]\" />", "Neutral");
+
+            string costFiltered = classFiltered
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost00.png\" alt=\"[cost00]\" />", "(0)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost01.png\" alt=\"[cost01]\" />", "(1)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost02.png\" alt=\"[cost02]\" />", "(2)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost03.png\" alt=\"[cost03]\" />", "(3)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost04.png\" alt=\"[cost04]\" />", "(4)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost05.png\" alt=\"[cost05]\" />", "(5)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost06.png\" alt=\"[cost06]\" />", "(6)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost07.png\" alt=\"[cost07]\" />", "(7)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost08.png\" alt=\"[cost08]\" />", "(8)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost09.png\" alt=\"[cost09]\" />", "(9)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost10.png\" alt=\"[cost10]\" />", "(10)");
+
+            return costFiltered
+                .Replace("<img class=\"icon-rectangle\" src=\"/wordpress/wp-content/images/texticon/icon_quick.png\" alt=\"[quick]\" />", "Quick:\n")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_fanfare.png\" alt=\"[fanfare]\" />", "Fanfare:")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_evolve.png\" alt=\"[evolve]\" />", "Evolve")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_hp.png\" alt=\"[defense]\" />", "Defense ")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_power.png\" alt=\"[attack]\" />", "Attack ")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_act.png\" alt=\"[act]\" />", "Action ")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_stand.png\" alt=\"[engage]\" />", "Engage")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_lastword.png\" alt=\"[lastwords]\" />", "Last Words: ")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_carrot.png\" alt=\"[feed]\" />", "Serve ")
+                .Replace ("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_q.png\" alt=\"[q]\" />", "Quick ")
+                .Replace ("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_ride.png\" alt=\"[ride]\" />", "Ride ")   //Cardfight Vanguard-specific icon, not released yet
+                .Replace("  ", " ");
         }
 
         private void PrepareHeaders(HttpRequestMessage request)
