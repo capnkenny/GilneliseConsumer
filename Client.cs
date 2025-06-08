@@ -91,7 +91,17 @@ namespace SVEDB_Extract
                 request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json;charset=utf-8");
 
                 HttpResponseMessage response = await client.SendAsync(request);
-                response.EnsureSuccessStatusCode();
+                try
+                {
+                    response.EnsureSuccessStatusCode();
+                }
+                catch
+                {
+                    //502s will sometimes crop up due to how much we request it seems
+                    await Task.Delay(10000);
+                    Console.WriteLine("Detected an issue retrieving the last response - waiting...");
+                    response = await client.SendAsync(request);
+                }
                 List<Card> cardList = await response.Content.ReadFromJsonAsync<List<Card>>() ?? new();
                 // if(cardList.Count > 0)
                 //     Console.WriteLine($"\t- {string.Join(", ", cardList.Select(c => c.CardNumber))}");
