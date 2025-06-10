@@ -366,12 +366,12 @@ namespace SVEDB_Extract
                 htmlDoc.LoadHtml(tokenCardHtml);
                 if (!tokenCardHtml.StartsWith("<a"))
                     continue;
-                var cardId = htmlDoc.DocumentNode.SelectSingleNode("/a/div[2]/p[1]").InnerText;
-                var cardTitle = htmlDoc.DocumentNode.SelectSingleNode("/a/div[2]/p[2]").InnerText;
-                var cardCost = htmlDoc.DocumentNode.SelectSingleNode("/a/div[2]/div[1]/span[4]/text()").InnerText;
-                var type = htmlDoc.DocumentNode.SelectSingleNode("/a/div[2]/div[1]/span[1]").InnerText;
-                var attrib = htmlDoc.DocumentNode.SelectSingleNode("/a/div[2]/div[1]/span[2]").InnerText;
-                var desc = htmlDoc.DocumentNode.SelectSingleNode("/a/div[2]/div[2]/p/text()").InnerText;
+                var cardId = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/p[1]")?.InnerText ?? "";
+                var cardTitle = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/p[2]")?.InnerText ?? "";
+                var cardCost = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[1]/span[4]/text()")?.InnerText ?? "";
+                var type = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[1]/span[1]")?.InnerText ?? "";
+                var attrib = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[1]/span[2]")?.InnerText ?? "";
+                var desc = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[2]/p/text()")?.InnerText ?? "";
 
                 Card card = new()
                 {
