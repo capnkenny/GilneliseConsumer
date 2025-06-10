@@ -199,14 +199,14 @@ namespace SVEDB_Extract
                     atk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? "";
                     def = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? "";
 
-                    var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/ul/li[19]/a/div[2]/div[2]/p")?.InnerText ?? "");
+                    var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/ul/li[19]/a/div[2]/div[2]/p/text()")?.InnerHtml ?? "");
                     filteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
 
                     if (card.CustomParm.BothSides)
                     {
                         secondAtk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? "";
                         secondDef = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? "";
-                        var secondDesc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[3]/p")?.InnerText ?? "");
+                        var secondDesc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[3]/p/text()")?.InnerHtml ?? "");
 
                         altFilteredDesc = Regex.Replace(secondDesc, "<.*?>", string.Empty).Trim();
                     }
@@ -371,7 +371,6 @@ namespace SVEDB_Extract
                 var cardCost = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[1]/span[4]/text()")?.InnerText ?? "";
                 var type = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[1]/span[1]")?.InnerText ?? "";
                 var attrib = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[1]/span[2]")?.InnerText ?? "";
-                var desc = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[2]/p/text()")?.InnerText ?? "";
 
                 Card card = new()
                 {
@@ -387,7 +386,7 @@ namespace SVEDB_Extract
                     CustomParm = new CustomParam 
                     {
                         BothSides = false
-                    }
+                    },
                 };
 
                 cardsToAdd.Add(card);
