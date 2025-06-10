@@ -383,7 +383,11 @@ namespace SVEDB_Extract
                     GParam = new GParam {
                     G0 = int.Parse(cardCost)
                     },
-                    Img = $"{cardId.Split("-")[0]}/{cardId}.png"
+                    Img = $"{cardId.Split("-")[0]}/{cardId}.png",
+                    CustomParm = new CustomParam 
+                    {
+                        BothSides = false
+                    }
                 };
 
                 cardsToAdd.Add(card);

@@ -90,14 +90,12 @@ namespace SVEDB_Extract
                 }
             }
 
-
-
             return new()
             {
                 Id = c.CardNumber,
                 CardSet = c.CardNumber.Split('-')[0],
                 CardNumber = c.CardNumber.Split('-')[1],
-                Kind = c.CardKind.Replace("\u30FB", ""),
+                Kind = c.CardKind.Replace("\u30FB", "").Replace(" / ", "").Replace(" \\ ", ""),
                 Class = c.Affiliation,
                 Name = c.Name,
                 ImgUrl = $"https://en.shadowverse-evolve.com/wordpress/wp-content/images/cardlist/{c.Img}",
