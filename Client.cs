@@ -199,7 +199,7 @@ namespace SVEDB_Extract
                     atk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? "";
                     def = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? "";
 
-                    var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/ul/li[19]/a/div[2]/div[2]/p/text()")?.InnerHtml ?? "");
+                    var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[3]/p")?.InnerHtml ?? "");
                     filteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
 
                     if (card.CustomParm.BothSides)
@@ -227,38 +227,38 @@ namespace SVEDB_Extract
         private string SanitizeDescription(string cardDescriptionHtml)
         {
             string classFiltered = cardDescriptionHtml
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_elf.png\" alt=\"[forestcraft]\" />", "Forestcraft")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_royal.png\" alt=\"[swordcraft]\" />", "Swordcraft")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_nightmare.png\" alt=\"[abysscraft]\" />", "Abysscraft")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_dragon.png\" alt=\"[dragoncraft]\" />", "Dragoncraft")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_bishop.png\" alt=\"[havencraft]\" />", "Havencraft")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_neutral.png\" alt=\"[neutral]\" />", "Neutral");
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_elf.png\" alt=\"[forestcraft]\">", "Forestcraft")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_royal.png\" alt=\"[swordcraft]\">", "Swordcraft")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_nightmare.png\" alt=\"[abysscraft]\">", "Abysscraft")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_dragon.png\" alt=\"[dragoncraft]\">", "Dragoncraft")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_bishop.png\" alt=\"[havencraft]\">", "Havencraft")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_neutral.png\" alt=\"[neutral]\">", "Neutral");
 
             string costFiltered = classFiltered
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost00.png\" alt=\"[cost00]\" />", "(0)")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost01.png\" alt=\"[cost01]\" />", "(1)")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost02.png\" alt=\"[cost02]\" />", "(2)")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost03.png\" alt=\"[cost03]\" />", "(3)")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost04.png\" alt=\"[cost04]\" />", "(4)")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost05.png\" alt=\"[cost05]\" />", "(5)")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost06.png\" alt=\"[cost06]\" />", "(6)")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost07.png\" alt=\"[cost07]\" />", "(7)")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost08.png\" alt=\"[cost08]\" />", "(8)")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost09.png\" alt=\"[cost09]\" />", "(9)")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost10.png\" alt=\"[cost10]\" />", "(10)");
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost00.png\" alt=\"[cost00]\">", "(0)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost01.png\" alt=\"[cost01]\">", "(1)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost02.png\" alt=\"[cost02]\">", "(2)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost03.png\" alt=\"[cost03]\">", "(3)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost04.png\" alt=\"[cost04]\">", "(4)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost05.png\" alt=\"[cost05]\">", "(5)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost06.png\" alt=\"[cost06]\">", "(6)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost07.png\" alt=\"[cost07]\">", "(7)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost08.png\" alt=\"[cost08]\">", "(8)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost09.png\" alt=\"[cost09]\">", "(9)")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_cost10.png\" alt=\"[cost10]\">", "(10)");
 
             return costFiltered
-                .Replace("<img class=\"icon-rectangle\" src=\"/wordpress/wp-content/images/texticon/icon_quick.png\" alt=\"[quick]\" />", "Quick:\n")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_fanfare.png\" alt=\"[fanfare]\" />", "Fanfare:")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_evolve.png\" alt=\"[evolve]\" />", "Evolve")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_hp.png\" alt=\"[defense]\" />", "Defense ")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_power.png\" alt=\"[attack]\" />", "Attack ")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_act.png\" alt=\"[act]\" />", "Action ")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_stand.png\" alt=\"[engage]\" />", "Engage")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_lastword.png\" alt=\"[lastwords]\" />", "Last Words: ")
-                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_carrot.png\" alt=\"[feed]\" />", "Serve ")
-                .Replace ("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_q.png\" alt=\"[q]\" />", "Quick ")
-                .Replace ("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_ride.png\" alt=\"[ride]\" />", "Ride ")   //Cardfight Vanguard-specific icon, not released yet
+                .Replace("<img class=\"icon-rectangle\" src=\"/wordpress/wp-content/images/texticon/icon_quick.png\" alt=\"[quick]\">", "[Quick]\n")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_fanfare.png\" alt=\"[fanfare]\">", "[Fanfare]")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_evolve.png\" alt=\"[evolve]\">", "[Evolve]")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_hp.png\" alt=\"[defense]\">", "Defense ")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_power.png\" alt=\"[attack]\">", "Attack ")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_act.png\" alt=\"[act]\">", "[Action]")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_stand.png\" alt=\"[engage]\">", "[Engage]")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_lastword.png\" alt=\"[lastwords]\">", "[Last Words]")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_carrot.png\" alt=\"[feed]\">", "[Serve]")
+                .Replace ("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_q.png\" alt=\"[q]\">", "[Quick]")
+                .Replace ("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_ride.png\" alt=\"[ride]\">", "[Ride]")   //Cardfight Vanguard-specific icon, not released yet
                 .Replace("  ", " ");
         }
 
