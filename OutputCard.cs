@@ -71,6 +71,7 @@ namespace SVEDB_Extract
             int altDef = -1;
             string desc = string.Empty;
             string altDesc = string.Empty;
+            string affiliation = c.Affiliation;
 
             CardMetaData.Metadata.TryGetValue(c.CardNumber, out string[]? meta);
             if (meta != null)
@@ -88,6 +89,8 @@ namespace SVEDB_Extract
                     altDesc = meta[5];
                 }
             }
+
+
 
             return new()
             {

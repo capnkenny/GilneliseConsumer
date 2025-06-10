@@ -1,6 +1,9 @@
-﻿using System.IO.Compression;
+﻿using HtmlAgilityPack;
+using System.IO.Compression;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -10,6 +13,8 @@ namespace SVEDB_Extract
     {
         private HttpClient client;
         private List<Card> cards;
+
+        private const int PagesOfTokens = 12;
 
         public string[] MetadataTypesToIgnore = {
             "Spell",
@@ -39,11 +44,14 @@ namespace SVEDB_Extract
             "CSD02A",
             "CSD02B",
             "CSD02C",
+            "PR",
+            "GFB01"
         };
 
         public Client()
         {
-            client = new HttpClient();
+            var clientHandler = new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate };
+            client = new HttpClient(clientHandler);
             cards = new List<Card>();
         }
 
@@ -57,7 +65,9 @@ namespace SVEDB_Extract
 
             if (set == "A")
             {
-                return await GetCardsAsync(SupportedList);
+                var cards = await GetTokenCardsAsync();
+                cards.AddRange(await GetCardsAsync(SupportedList));
+                return cards;
             }
 
             string[] assumedSets = set.Split(';');
@@ -86,7 +96,7 @@ namespace SVEDB_Extract
                 string json = JsonSerializer.Serialize(cardRequest);
                 
                 HttpRequestMessage request = new(HttpMethod.Post, "https://decklog-en.bushiroad.com/system/app/api/search/6");
-                PrepareHeaders(request);
+                PrepareNaviHeaders(request);
                 request.Content = new StringContent(json);
                 request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json;charset=utf-8");
 
@@ -117,7 +127,7 @@ namespace SVEDB_Extract
                         cardRequest.Page++;
                         json = JsonSerializer.Serialize(cardRequest);
                         request = new HttpRequestMessage(HttpMethod.Post, "https://decklog-en.bushiroad.com/system/app/api/search/6");
-                        PrepareHeaders(request);
+                        PrepareNaviHeaders(request);
                         request.Content = new StringContent(json);
                         request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json;charset=utf-8");
                         await Task.Delay(250);
@@ -167,6 +177,9 @@ namespace SVEDB_Extract
                 //<span class="heading heading-Power">Attack
                 if(body.Contains(statusLookup))
                 {
+                    var doc = new HtmlDocument();
+                    doc.LoadHtml(body);
+
                     string atk = string.Empty;
                     string def = string.Empty;
                     string filteredDesc = string.Empty;
@@ -174,60 +187,28 @@ namespace SVEDB_Extract
                     string secondDef = string.Empty;
                     string altFilteredDesc = string.Empty;
 
-                    var sa = Regex.Match(body, @"Attack<\/span>\d+<\/span>");
-                    if(sa.Success)
+                    string affiliation = card.Affiliation;
+                    if (string.IsNullOrWhiteSpace(affiliation))
                     {
-                        atk = sa.Groups[0].Value.Replace(@"Attack</span>", "").Replace("</span>", "");
+                        
+                        affiliation = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[1]/dl[2]/dd")?.InnerText ?? card.Affiliation;
                     }
 
-                    sa = Regex.Match(body, @"Defense<\/span>\d+<\/span>");
-                    if(sa.Success)
-                    {
-                        def = sa.Groups[0].Value.Replace(@"Defense</span>", "").Replace("</span>", "");
-                    }
+                    //refactor this later
 
-                    
-                    sa = Regex.Match(body, @"(<div class=""detail"">\n<p>)[\s\S]+(<\/p>)");
-                    if (sa.Success)
-                    {
-                        var descIndexEnd = sa.Groups[0].Value.IndexOf("</p>");
+                    atk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? "";
+                    def = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? "";
 
-                        var desc = SanitizeDescription(sa.Groups[0].Value.Substring(0, descIndexEnd));
-                            
-                        filteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
-                    }
+                    var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/ul/li[19]/a/div[2]/div[2]/p")?.InnerText ?? "");
+                    filteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
 
                     if (card.CustomParm.BothSides)
                     {
-                        sa = Regex.Match(body, @"(<div class=""cardlist-Detail_Box_Inner"">)[\s\S]+(<\/div>)");
-                        if (sa.Groups.Count > 1)
-                        {
-                            var secondDescriptionHtmlIndex = sa.Groups[0].Value.LastIndexOf(@"<div class=""cardlist-Detail_Box_Inner"">");
-                            var secondDescriptionBody = sa.Groups[0].Value.Substring(secondDescriptionHtmlIndex);
+                        secondAtk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? "";
+                        secondDef = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? "";
+                        var secondDesc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[3]/p")?.InnerText ?? "");
 
-                            sa = Regex.Match(secondDescriptionBody, @"Attack<\/span>\d+<\/span>");
-                            if (sa.Success)
-                            {
-                                secondAtk = sa.Groups[0].Value.Replace(@"Attack</span>", "").Replace("</span>", "");
-                            }
-
-                            sa = Regex.Match(body, @"Defense<\/span>\d+<\/span>");
-                            if (sa.Success)
-                            {
-                                secondDef = sa.Groups[0].Value.Replace(@"Defense</span>", "").Replace("</span>", "");
-                            }
-
-                            sa = Regex.Match(body, @"(<div class=""detail"">\n<p>)[\s\S]+(<\/p>)");
-                            if (sa.Success)
-                            {
-                                var descIndexEnd = sa.Groups[0].Value.IndexOf("</p>");
-
-                                var desc = SanitizeDescription(sa.Groups[0].Value.Substring(0, descIndexEnd));
-
-                                altFilteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
-                            }
-
-                        }
+                        altFilteredDesc = Regex.Replace(secondDesc, "<.*?>", string.Empty).Trim();
                     }
 
                     CardMetaData.Metadata.TryAdd(card.CardNumber, new string[]{ atk, def, filteredDesc, secondAtk, secondDef, altFilteredDesc });
@@ -281,7 +262,7 @@ namespace SVEDB_Extract
                 .Replace("  ", " ");
         }
 
-        private void PrepareHeaders(HttpRequestMessage request)
+        private void PrepareNaviHeaders(HttpRequestMessage request)
         {
             request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0");
             request.Headers.Add("Accept", "application/json, text/plain, */*");
@@ -297,8 +278,138 @@ namespace SVEDB_Extract
             request.Headers.Add("Cache-Control", "no-cache");
             request.Headers.Add("TE", "trailers");
         }
+
+        private void PrepareSiteHeaders(HttpRequestMessage request)
+        {
+            request.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0");
+            request.Headers.TryAddWithoutValidation("Accept", "*/*");
+            request.Headers.TryAddWithoutValidation("Accept-Language", "en-US,en;q=0.5");
+            request.Headers.TryAddWithoutValidation("Accept-Encoding", "gzip, deflate, br, zstd");
+            request.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
+            request.Headers.TryAddWithoutValidation("Connection", "keep-alive");
+            request.Headers.TryAddWithoutValidation("Referer", "https://en.shadowverse-evolve.com/cards/searchresults/?card_name=&format[0]=all&class[0]=all&title=&expansion_name=&cost[0]=all&card_kind[0]=Token&rare[0]=all&power_from=&power_to=&hp_from=&hp_to=&type=&ability=&keyword=&view=text&sort=old");
+            request.Headers.TryAddWithoutValidation("Sec-Fetch-Dest", "empty");
+            request.Headers.TryAddWithoutValidation("Sec-Fetch-Mode", "no-cors");
+            request.Headers.TryAddWithoutValidation("Sec-Fetch-Site", "same-origin");
+            request.Headers.TryAddWithoutValidation("Pragma", "no-cache");
+            request.Headers.TryAddWithoutValidation("Cache-Control", "no-cache");
+            request.Headers.TryAddWithoutValidation("TE", "trailers");
+            request.Headers.TryAddWithoutValidation("Priority", "u=4");
+            request.Headers.TryAddWithoutValidation("Cookie", "_ga=GA1.3.1547043965.1714064650; _ga_EPP06NTRCV=GS1.1.1719762921.14.1.1719763108.35.0.0; _ga=GA1.2.1547043965.1714064650; CookieConsent={stamp:%27Fj1+4fFNpTx6diBKlz1oDKUCQvJrog5l1a3dXGk7+DpDBcCjihWwZQ==%27%2Cnecessary:true%2Cpreferences:true%2Cstatistics:true%2Cmarketing:true%2Cmethod:%27explicit%27%2Cver:1%2Cutc:1746823276833%2Cregion:%27us-34%27}; cardlist_search_sort=old; cardlist_view=text");
+
+        }
+
+        private async Task<List<Card>> GetTokenCardsAsync()
+        {
+            Console.WriteLine("Getting token cards...");
+            int page = 1;
+            List<Card> cardsToAdd = [];
+
+            HttpRequestMessage request = new(HttpMethod.Get, $"https://en.shadowverse-evolve.com/cards/searchresults_ex?card_name=&format%5B0%5D=all&class%5B0%5D=all&title=&expansion_name=&cost%5B0%5D=all&card_kind%5B0%5D=Token&rare%5B0%5D=all&power_from=&power_to=&hp_from=&hp_to=&type=&ability=&keyword=&view=text&page={page}&t={DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
+            PrepareSiteHeaders(request);
+            
+
+            HttpResponseMessage response = await client.SendAsync(request);
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch
+            {
+                //502s will sometimes crop up due to how much we request it seems
+                await Task.Delay(10000);
+                Console.WriteLine("Detected an issue retrieving the last response - waiting...");
+                request = new(HttpMethod.Get, $"https://en.shadowverse-evolve.com/cards/searchresults_ex?card_name=&format%5B0%5D=all&class%5B0%5D=all&title=&expansion_name=&cost%5B0%5D=all&card_kind%5B0%5D=Token&rare%5B0%5D=all&power_from=&power_to=&hp_from=&hp_to=&type=&ability=&keyword=&view=text&page={page}&t={DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
+                PrepareSiteHeaders(request);
+                response = await client.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+            }
+
+            List<string> tokensToParse = [];
+            
+            string html = await response.Content.ReadAsStringAsync();
+            string[] brokenUpHtml = html.Split("<li class=\"ex-item\">");
+            tokensToParse.AddRange(brokenUpHtml);
+            page++;
+
+            while (page <= PagesOfTokens)
+            {
+                request = new(HttpMethod.Get, $"https://en.shadowverse-evolve.com/cards/searchresults_ex?card_name=&format%5B0%5D=all&class%5B0%5D=all&title=&expansion_name=&cost%5B0%5D=all&card_kind%5B0%5D=Token&rare%5B0%5D=all&power_from=&power_to=&hp_from=&hp_to=&type=&ability=&keyword=&view=text&page={page}&t={DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
+                PrepareSiteHeaders(request);
+
+                response = await client.SendAsync(request);
+                try
+                {
+                    response.EnsureSuccessStatusCode();
+                }
+                catch
+                {
+                    //502s will sometimes crop up due to how much we request it seems
+                    await Task.Delay(10000);
+                    Console.WriteLine("Detected an issue retrieving the last response - waiting...");
+                    request = new(HttpMethod.Get, $"https://en.shadowverse-evolve.com/cards/searchresults_ex?card_name=&format%5B0%5D=all&class%5B0%5D=all&title=&expansion_name=&cost%5B0%5D=all&card_kind%5B0%5D=Token&rare%5B0%5D=all&power_from=&power_to=&hp_from=&hp_to=&type=&ability=&keyword=&view=text&page={page}&t={DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
+                    PrepareSiteHeaders(request);
+                    response = await client.SendAsync(request);
+                    response.EnsureSuccessStatusCode();
+                }
+
+                string htmlResp = await response.Content.ReadAsStringAsync();
+                string[] toParse = htmlResp.Split("<li class=\"ex-item\">");
+                tokensToParse.AddRange(toParse);
+                page++;
+                await Task.Delay(250);
+            }
+
+            foreach (string tokenCardHtml in tokensToParse)
+            {
+                var htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(tokenCardHtml);
+                if (!tokenCardHtml.StartsWith("<a"))
+                    continue;
+                var cardId = htmlDoc.DocumentNode.SelectSingleNode("/a/div[2]/p[1]").InnerText;
+                var cardTitle = htmlDoc.DocumentNode.SelectSingleNode("/a/div[2]/p[2]").InnerText;
+                var cardCost = htmlDoc.DocumentNode.SelectSingleNode("/a/div[2]/div[1]/span[4]/text()").InnerText;
+                var type = htmlDoc.DocumentNode.SelectSingleNode("/a/div[2]/div[1]/span[1]").InnerText;
+                var attrib = htmlDoc.DocumentNode.SelectSingleNode("/a/div[2]/div[1]/span[2]").InnerText;
+                var desc = htmlDoc.DocumentNode.SelectSingleNode("/a/div[2]/div[2]/p/text()").InnerText;
+
+                Card card = new()
+                {
+                    CardNumber = cardId,
+                    Name = cardTitle,
+                    Affiliation = "",
+                    CardKind = type,
+                    Max = -1,
+                    GParam = new GParam {
+                    G0 = int.Parse(cardCost)
+                    },
+                    Img = $"{cardId.Split("-")[0]}/{cardId}.png"
+                };
+
+                cardsToAdd.Add(card);
+            }
+
+            return cardsToAdd;
+        }
+    }
+
+    public static class ClientExtensions
+    {
+        public static byte[] ReadAllBytes(this Stream inStream)
+        {
+            if (inStream is MemoryStream inMemoryStream)
+                return inMemoryStream.ToArray();
+
+            using (var outStream = new MemoryStream())
+            {
+                inStream.CopyTo(outStream);
+                return outStream.ToArray();
+            }
+        }
     }
 }
+
+
 
 
 
