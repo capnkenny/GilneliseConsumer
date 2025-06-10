@@ -31477,7 +31477,7 @@
     "altName": "Orchis, Vengeful Puppet",
     "altAtk": 4,
     "altDef": 4,
-    "altDescription": "On Evolve - Summon 4 Puppet tokens.\nWhile this card is on your field, each Puppet on your field has Assail.\nWhenever a Puppet you control leaves the field, select an enemy leader or enemy follower on the field and deal it 2 damage."
+    "altDescription": "On Evolve - Summon 4 Puppet tokens."
   },
   {
     "cardId": "BP08-004EN",
@@ -34377,7 +34377,7 @@
     "altName": "Orchis, Vengeful Puppet",
     "altAtk": 4,
     "altDef": 4,
-    "altDescription": "On Evolve - Summon 4 Puppet tokens.\nWhile this card is on your field, each Puppet on your field has Assail.\nWhenever a Puppet you control leaves the field, select an enemy leader or enemy follower on the field and deal it 2 damage."
+    "altDescription": "On Evolve - Summon 4 Puppet tokens."
   },
   {
     "cardId": "BP08-SL04EN",
@@ -35017,7 +35017,7 @@
     "altName": "Paula, Passionate Warmth",
     "altAtk": 3,
     "altDef": 3,
-    "altDescription": "On Evolve - Select up to 2 other cards on your field and put them into their owners\u0027 EX areas.\nStrike, Combo (3) - Select an enemy follower on the field and deal it 3 damage."
+    "altDescription": "On Evolve - Select up to 2 other cards on your field and put them into their owners\u0027 EX areas."
   },
   {
     "cardId": "BP09-006EN",
@@ -35297,7 +35297,7 @@
     "altName": "Celia, Despair\u0027s Messenger",
     "altAtk": 4,
     "altDef": 4,
-    "altDescription": "Storm.\nOn Evolve - Summon a Steelclad Knight and Knight token."
+    "altDescription": "Storm."
   },
   {
     "cardId": "BP09-020EN",
@@ -35757,7 +35757,7 @@
     "altName": "Mysterian Blackwyrm",
     "altAtk": 5,
     "altDef": 5,
-    "altDescription": "Assail.\nOn Evolve - Deal 3 damage to each enemy leader."
+    "altDescription": "Assail."
   },
   {
     "cardId": "BP09-043EN",
@@ -36297,7 +36297,7 @@
     "altName": "Iniquitous Lindworm",
     "altAtk": 10,
     "altDef": 10,
-    "altDescription": "Storm.\nThis follower ignores Ward."
+    "altDescription": "Storm."
   },
   {
     "cardId": "BP09-070EN",
@@ -36717,7 +36717,7 @@
     "altName": "Vania, Blood Queen",
     "altAtk": 6,
     "altDef": 6,
-    "altDescription": "Storm.\nWhile this card is on your field, any Forest Bat you play costs 1 less.\nWhenever a Forest Bat is put onto your field, select an enemy follower on the field and deal it 3 damage."
+    "altDescription": "Storm."
   },
   {
     "cardId": "BP09-091EN",
@@ -37117,7 +37117,7 @@
     "altName": "Ceryneian Darkhind",
     "altAtk": 5,
     "altDef": 5,
-    "altDescription": "Bane.\nOn Evolve - Bury an amulet: Select an enemy leader or enemy follower on the field and deal it 4 damage."
+    "altDescription": "Bane."
   },
   {
     "cardId": "BP09-111EN",
@@ -37697,7 +37697,7 @@
     "altName": "Paula, Passionate Warmth",
     "altAtk": 3,
     "altDef": 3,
-    "altDescription": "On Evolve - Select up to 2 other cards on your field and put them into their owners\u0027 EX areas.\nStrike, Combo (3) - Select an enemy follower on the field and deal it 3 damage."
+    "altDescription": "On Evolve - Select up to 2 other cards on your field and put them into their owners\u0027 EX areas."
   },
   {
     "cardId": "BP09-P03EN",
@@ -37897,7 +37897,7 @@
     "altName": "Mysterian Blackwyrm",
     "altAtk": 5,
     "altDef": 5,
-    "altDescription": "Assail.\nOn Evolve - Deal 3 damage to each enemy leader."
+    "altDescription": "Assail."
   },
   {
     "cardId": "BP09-P13EN",
@@ -38137,7 +38137,7 @@
     "altName": "Iniquitous Lindworm",
     "altAtk": 10,
     "altDef": 10,
-    "altDescription": "Storm.\nThis follower ignores Ward."
+    "altDescription": "Storm."
   },
   {
     "cardId": "BP09-P25EN",
@@ -38477,7 +38477,7 @@
     "altName": "Ceryneian Darkhind",
     "altAtk": 5,
     "altDef": 5,
-    "altDescription": "Bane.\nOn Evolve - Bury an amulet: Select an enemy leader or enemy follower on the field and deal it 4 damage."
+    "altDescription": "Bane."
   },
   {
     "cardId": "BP09-P42EN",
@@ -38677,7 +38677,7 @@
     "altName": "Celia, Despair\u0027s Messenger",
     "altAtk": 4,
     "altDef": 4,
-    "altDescription": "Storm.\nOn Evolve - Summon a Steelclad Knight and Knight token."
+    "altDescription": "Storm."
   },
   {
     "cardId": "BP09-SL06EN",
@@ -38977,7 +38977,7 @@
     "altName": "Vania, Blood Queen",
     "altAtk": 6,
     "altDef": 6,
-    "altDescription": "Storm.\nWhile this card is on your field, any Forest Bat you play costs 1 less.\nWhenever a Forest Bat is put onto your field, select an enemy follower on the field and deal it 3 damage."
+    "altDescription": "Storm."
   },
   {
     "cardId": "BP09-SL21EN",
