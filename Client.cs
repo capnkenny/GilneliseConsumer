@@ -106,7 +106,7 @@ namespace SVEDB_Extract
                     response = await client.SendAsync(request);
                 }
                 List<Card> cardList = await response.Content.ReadFromJsonAsync<List<Card>>() ?? new();
-                
+
                 try
                 {
                     while (cardList.Count > 0)
@@ -125,17 +125,21 @@ namespace SVEDB_Extract
                         response = await client.SendAsync(request);
                         response.EnsureSuccessStatusCode();
                         cardList = await response.Content.ReadFromJsonAsync<List<Card>>() ?? new List<Card>();
-                        
+
                     }
                     cards = cards.OrderBy((card) => card.CardNumber).ToList();
-                    Console.WriteLine("\nFetched all cards - retrieving metadata...");
+                    Console.WriteLine($"\nFetched all ({cards.Count}) cards - retrieving metadata...");
 
-                    foreach (var c in cards)
+                    Parallel.ForEach(cards, new ParallelOptions
                     {
-                        await GetCardMetaData(client, c);
-                        await Task.Delay(250);
-                    }
-                    
+                        MaxDegreeOfParallelism = 10
+                    }, async card =>
+                    {
+                        Random r = new();
+                        await Task.Delay(100 + r.Next(0, 101));
+                        await GetCardMetaData(client, card);
+                    });
+
                 }
                 catch (Exception ex)
                 {
