@@ -1,9 +1,7 @@
 ﻿using HtmlAgilityPack;
-using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -15,11 +13,6 @@ namespace SVEDB_Extract
         private List<Card> cards;
 
         private const int PagesOfTokens = 12;
-
-        public string[] MetadataTypesToIgnore = {
-            "Spell",
-            "Amulet"
-        };
 
         public static string[] SupportedList =
         {
@@ -65,8 +58,8 @@ namespace SVEDB_Extract
 
             if (set == "A")
             {
-                var cards = await GetTokenCardsAsync();
-                cards.AddRange(await GetCardsAsync(SupportedList));
+                var cards = await GetCardsAsync(SupportedList);
+                cards.AddRange(await GetTokenCardsAsync());
                 return cards;
             }
 
@@ -113,9 +106,7 @@ namespace SVEDB_Extract
                     response = await client.SendAsync(request);
                 }
                 List<Card> cardList = await response.Content.ReadFromJsonAsync<List<Card>>() ?? new();
-                // if(cardList.Count > 0)
-                //     Console.WriteLine($"\t- {string.Join(", ", cardList.Select(c => c.CardNumber))}");
-
+                
                 try
                 {
                     while (cardList.Count > 0)
@@ -139,7 +130,7 @@ namespace SVEDB_Extract
                     cards = cards.OrderBy((card) => card.CardNumber).ToList();
                     Console.WriteLine("\nFetched all cards - retrieving metadata...");
 
-                    foreach (var c in cardList)
+                    foreach (var c in cards)
                     {
                         await GetCardMetaData(client, c);
                         await Task.Delay(250);
@@ -157,11 +148,6 @@ namespace SVEDB_Extract
 
         private async Task GetCardMetaData(HttpClient client, Card card)
         {
-            if (MetadataTypesToIgnore.Any((item) => card.CardKind.Contains(item)))
-            {
-                return;
-            }
-
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
@@ -190,7 +176,6 @@ namespace SVEDB_Extract
                     string affiliation = card.Affiliation;
                     if (string.IsNullOrWhiteSpace(affiliation))
                     {
-                        
                         affiliation = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[1]/dl[2]/dd")?.InnerText ?? card.Affiliation;
                     }
 
@@ -199,9 +184,10 @@ namespace SVEDB_Extract
                     atk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? "";
                     def = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? "";
 
+
                     var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[3]/p")?.InnerHtml ?? "");
                     filteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
-
+                    
                     if (card.CustomParm.BothSides)
                     {
                         secondAtk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? "";
