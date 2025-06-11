@@ -209,7 +209,6 @@ namespace SVEDB_Extract
                         var secondDesc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[3]/p")?.InnerHtml ?? "");
 
                         altFilteredDesc = Regex.Replace(secondDesc, "<.*?>", string.Empty).Trim();
-                        Console.WriteLine("AYOOOO");
                     }
 
                     CardMetaData.Metadata.TryAdd(card.CardNumber, new string[]{ atk, def, filteredDesc, secondAtk, secondDef, altFilteredDesc });
