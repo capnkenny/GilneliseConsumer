@@ -159,13 +159,15 @@ namespace SVEDB_Extract
             };
 
             const string statusLookup = "<div class=\"status\">";
-            using (var response = await client.SendAsync(request))
+            var response = await client.SendAsync(request);
+
+            try
             {
                 response.EnsureSuccessStatusCode();
                 var body = await response.Content.ReadAsStringAsync();
-                
+
                 //<span class="heading heading-Power">Attack
-                if(body.Contains(statusLookup))
+                if (body.Contains(statusLookup))
                 {
                     var doc = new HtmlDocument();
                     doc.LoadHtml(body);
@@ -191,7 +193,7 @@ namespace SVEDB_Extract
 
                     var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[3]/p")?.InnerHtml ?? "");
                     filteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
-                    
+
                     if (card.CustomParm.BothSides)
                     {
                         secondAtk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? "";
@@ -201,17 +203,71 @@ namespace SVEDB_Extract
                         altFilteredDesc = Regex.Replace(secondDesc, "<.*?>", string.Empty).Trim();
                     }
 
-                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[]{ atk, def, filteredDesc, secondAtk, secondDef, altFilteredDesc });
+                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { atk, def, filteredDesc, secondAtk, secondDef, altFilteredDesc });
 
                     return;
                 }
                 else
                 {
-                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[]{ "", "" });
+                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { "", "" });
                     return;
                 }
             }
+            catch
+            {
+                await Task.Delay(3000);
+                response = await client.SendAsync(request);
 
+                response.EnsureSuccessStatusCode();
+                var body = await response.Content.ReadAsStringAsync();
+
+                //<span class="heading heading-Power">Attack
+                if (body.Contains(statusLookup))
+                {
+                    var doc = new HtmlDocument();
+                    doc.LoadHtml(body);
+
+                    string atk = string.Empty;
+                    string def = string.Empty;
+                    string filteredDesc = string.Empty;
+                    string secondAtk = string.Empty;
+                    string secondDef = string.Empty;
+                    string altFilteredDesc = string.Empty;
+
+                    string affiliation = card.Affiliation;
+                    if (string.IsNullOrWhiteSpace(affiliation))
+                    {
+                        affiliation = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[1]/dl[2]/dd")?.InnerText ?? card.Affiliation;
+                    }
+
+                    //refactor this later
+
+                    atk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? "";
+                    def = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? "";
+
+
+                    var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[3]/p")?.InnerHtml ?? "");
+                    filteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
+
+                    if (card.CustomParm.BothSides)
+                    {
+                        secondAtk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? "";
+                        secondDef = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? "";
+                        var secondDesc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[3]/p")?.InnerHtml ?? "");
+
+                        altFilteredDesc = Regex.Replace(secondDesc, "<.*?>", string.Empty).Trim();
+                    }
+
+                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { atk, def, filteredDesc, secondAtk, secondDef, altFilteredDesc });
+
+                    return;
+                }
+                else
+                {
+                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { "", "" });
+                    return;
+                }
+            }
         }
 
         private string SanitizeDescription(string cardDescriptionHtml)
