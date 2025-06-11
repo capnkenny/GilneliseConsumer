@@ -216,6 +216,11 @@ namespace SVEDB_Extract
             catch
             {
                 await Task.Delay(3000);
+                request = new HttpRequestMessage
+                {
+                    Method = HttpMethod.Get,
+                    RequestUri = new Uri($"https://en.shadowverse-evolve.com/cards/?cardno={card.CardNumber}"),
+                };
                 response = await client.SendAsync(request);
 
                 response.EnsureSuccessStatusCode();
