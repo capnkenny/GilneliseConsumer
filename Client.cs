@@ -129,22 +129,19 @@ namespace SVEDB_Extract
                     }
                     cards = cards.OrderBy((card) => card.CardNumber).ToList();
                     Console.WriteLine($"\nFetched all ({cards.Count}) cards - retrieving metadata...");
-
-                    Parallel.ForEach(cards, new ParallelOptions
-                    {
-                        MaxDegreeOfParallelism = 10
-                    }, async card =>
-                    {
-                        Random r = new();
-                        await Task.Delay(100 + r.Next(0, 101));
-                        await GetCardMetaData(client, card);
-                    });
-
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"[ERROR] - {ex.Message} - Set {set}, Page {cardRequest.Page}");
                 }
+            }
+
+            Random r = new();
+
+            foreach (var card in cards)
+            {
+                await Task.Delay(100 + r.Next(0, 101));
+                await GetCardMetaData(client, card);    
             }
 
             return cards;
