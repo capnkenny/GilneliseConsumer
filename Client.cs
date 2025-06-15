@@ -129,7 +129,7 @@ namespace SVEDB_Extract
 
                     }
                     cards = cards.OrderBy((card) => card.CardNumber).ToList();
-                    Console.WriteLine($"\nFetched all ({cards.Count}) cards - retrieving metadata...");
+                    Console.WriteLine($"\Retrieved all ({cards.Count}) cards for set {set}.");
                 }
                 catch (Exception ex)
                 {
@@ -150,6 +150,8 @@ namespace SVEDB_Extract
 
         private async Task GetCardMetaData(HttpClient client, Card card)
         {
+            Console.WriteLine($"Fetching metadata for {card.Id}...");
+
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
