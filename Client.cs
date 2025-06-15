@@ -153,7 +153,7 @@ namespace SVEDB_Extract
 
         private async Task GetCardMetaData(HttpClient client, Card card)
         {
-            Console.WriteLine($"Fetching metadata for {card.Id}...");
+            Console.WriteLine($"Fetching metadata for {card.CardNumber}...");
 
             var request = new HttpRequestMessage
             {

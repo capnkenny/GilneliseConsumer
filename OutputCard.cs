@@ -106,7 +106,7 @@ namespace SVEDB_Extract
                 Id = c.CardNumber,
                 CardSet = c.CardNumber.Split('-')[0],
                 CardNumber = c.CardNumber.Split('-')[1],
-                Kind = c.CardKind.Replace("\u30FB", "").Replace(" / ", "").Replace(" \\ ", ""),
+                Kind = c.CardKind.Replace("\u30FB", "").Replace(" \\ ", ""),
                 Class = c.Affiliation,
                 Trait = trait,
                 Name = c.Name,
