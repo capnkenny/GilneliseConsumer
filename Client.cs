@@ -129,7 +129,7 @@ namespace SVEDB_Extract
 
                     }
                     cards = cards.OrderBy((card) => card.CardNumber).ToList();
-                    Console.WriteLine($"\Retrieved all ({cards.Count}) cards for set {set}.");
+                    Console.WriteLine($"Retrieved all ({cards.Count}) cards for set {set}.");
                 }
                 catch (Exception ex)
                 {
@@ -144,6 +144,9 @@ namespace SVEDB_Extract
                 await Task.Delay(100 + r.Next(0, 101));
                 await GetCardMetaData(client, card);    
             }
+
+            Console.WriteLine(); // el oh el
+            Console.WriteLine($"Successfully fetched {cards.Count} cards from all sets requested.");
 
             return cards;
         }
