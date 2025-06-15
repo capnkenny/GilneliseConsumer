@@ -95,46 +95,55 @@ namespace SVEDB_Extract
                 request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json;charset=utf-8");
 
                 HttpResponseMessage response = await client.SendAsync(request);
-                try
+                int loop = 0;
+                while (!response.IsSuccessStatusCode)
                 {
-                    response.EnsureSuccessStatusCode();
-                }
-                catch
-                {
-                    //502s will sometimes crop up due to how much we request it seems
-                    await Task.Delay(10000);
+                    await Task.Delay(3000+loop);
                     Console.WriteLine("Detected an issue retrieving the last response - waiting...");
+                    request = new(HttpMethod.Post, "https://decklog-en.bushiroad.com/system/app/api/search/6");
+                    PrepareNaviHeaders(request);
+                    request.Content = new StringContent(json);
+                    request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json;charset=utf-8");
                     response = await client.SendAsync(request);
+                    loop += 100;
                 }
+                
+                    
+                
                 List<Card> cardList = await response.Content.ReadFromJsonAsync<List<Card>>() ?? new();
 
-                try
+                while (cardList.Count > 0)
                 {
-                    while (cardList.Count > 0)
-                    {
-                        cards.AddRange(cardList);
-                        cards = cards.Distinct().ToList();
-                        await Parallel.ForEachAsync(cardList, async (asyncCard, token) => { await GetCardMetaData(client, asyncCard); });
+                    cards.AddRange(cardList);
+                    cards = cards.Distinct().ToList();
+                    //await Parallel.ForEachAsync(cardList, async (asyncCard, token) => { await GetCardMetaData(client, asyncCard); });
 
-                        cardRequest.Page++;
-                        json = JsonSerializer.Serialize(cardRequest);
+                    cardRequest.Page++;
+                    json = JsonSerializer.Serialize(cardRequest);
+                    request = new HttpRequestMessage(HttpMethod.Post, "https://decklog-en.bushiroad.com/system/app/api/search/6");
+                    PrepareNaviHeaders(request);
+                    request.Content = new StringContent(json);
+                    request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json;charset=utf-8");
+                    await Task.Delay(250);
+                    response = await client.SendAsync(request);
+                    int innerLoop = 0;
+                    while (!response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine($"Retrying request for page {cardRequest.Page} of set {set}...");
+                        await Task.Delay(2500 + innerLoop);
                         request = new HttpRequestMessage(HttpMethod.Post, "https://decklog-en.bushiroad.com/system/app/api/search/6");
                         PrepareNaviHeaders(request);
                         request.Content = new StringContent(json);
                         request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json;charset=utf-8");
-                        await Task.Delay(250);
                         response = await client.SendAsync(request);
-                        response.EnsureSuccessStatusCode();
-                        cardList = await response.Content.ReadFromJsonAsync<List<Card>>() ?? new List<Card>();
-
                     }
-                    cards = cards.OrderBy((card) => card.CardNumber).ToList();
-                    Console.WriteLine($"Retrieved all ({cards.Count}) cards for set {set}.");
+
+                    cardList = await response.Content.ReadFromJsonAsync<List<Card>>() ?? new List<Card>();
+
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[ERROR] - {ex.Message} - Set {set}, Page {cardRequest.Page}");
-                }
+                cards = cards.OrderBy((card) => card.CardNumber).ToList();
+                Console.WriteLine($"Retrieved all ({cards.Count}) cards for set {set}.");
+                
             }
 
             Random r = new();
@@ -163,128 +172,72 @@ namespace SVEDB_Extract
 
             const string statusLookup = "<div class=\"status\">";
             var response = await client.SendAsync(request);
-
-            try
+            int loop = 0;
+            while (response.StatusCode != HttpStatusCode.OK)
             {
-                response.EnsureSuccessStatusCode();
-                var body = await response.Content.ReadAsStringAsync();
-
-                //<span class="heading heading-Power">Attack
-                if (body.Contains(statusLookup))
-                {
-                    var doc = new HtmlDocument();
-                    doc.LoadHtml(body);
-
-                    string atk = string.Empty;
-                    string def = string.Empty;
-                    string trait = string.Empty;
-                    string filteredDesc = string.Empty;
-                    string secondAtk = string.Empty;
-                    string secondDef = string.Empty;
-                    string altFilteredDesc = string.Empty;
-                    string altTrait = string.Empty;
-
-                    string affiliation = card.Affiliation;
-                    if (string.IsNullOrWhiteSpace(affiliation))
-                    {
-                        affiliation = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[1]/dl[2]/dd")?.InnerText ?? card.Affiliation;
-                    }
-
-                    //refactor this later
-
-                    atk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? string.Empty;
-                    def = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? string.Empty;
-
-                    trait = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[1]/dl[4]/dd")?.InnerText ?? string.Empty;
-
-                    var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[3]/p")?.InnerHtml ?? string.Empty);
-                    filteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
-
-                    if (card.CustomParm.BothSides)
-                    {
-                        secondAtk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? string.Empty;
-                        secondDef = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? string.Empty;
-                        var secondDesc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[3]/p")?.InnerHtml ?? string.Empty);
-
-                        altFilteredDesc = Regex.Replace(secondDesc, "<.*?>", string.Empty).Trim();
-
-                        altTrait = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[1]/dl[4]/dd")?.InnerText ?? string.Empty;
-                    }
-
-                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { atk, def, filteredDesc, trait, secondAtk, secondDef, altFilteredDesc, altTrait });
-
-                    return;
-                }
-                else
-                {
-                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { "", "" });
-                    return;
-                }
-            }
-            catch
-            {
-                await Task.Delay(3000);
+                loop += 100;
+                Console.WriteLine($"Retrying metadata call for {card.CardNumber}...");
+                await Task.Delay(2500+loop);
                 request = new HttpRequestMessage
                 {
                     Method = HttpMethod.Get,
                     RequestUri = new Uri($"https://en.shadowverse-evolve.com/cards/?cardno={card.CardNumber}"),
                 };
                 response = await client.SendAsync(request);
+            }
 
-                response.EnsureSuccessStatusCode();
-                var body = await response.Content.ReadAsStringAsync();
+            var body = await response.Content.ReadAsStringAsync();
 
-                //<span class="heading heading-Power">Attack
-                if (body.Contains(statusLookup))
+            //<span class="heading heading-Power">Attack
+            if (body.Contains(statusLookup))
+            {
+                var doc = new HtmlDocument();
+                doc.LoadHtml(body);
+
+                string atk = string.Empty;
+                string def = string.Empty;
+                string trait = string.Empty;
+                string filteredDesc = string.Empty;
+                string secondAtk = string.Empty;
+                string secondDef = string.Empty;
+                string altFilteredDesc = string.Empty;
+                string altTrait = string.Empty;
+
+                string affiliation = card.Affiliation;
+                if (string.IsNullOrWhiteSpace(affiliation))
                 {
-                    var doc = new HtmlDocument();
-                    doc.LoadHtml(body);
-
-                    string atk = string.Empty;
-                    string def = string.Empty;
-                    string filteredDesc = string.Empty;
-                    string secondAtk = string.Empty;
-                    string secondDef = string.Empty;
-                    string altFilteredDesc = string.Empty;
-                    string trait = string.Empty;
-                    string altTrait = string.Empty;
-
-                    string affiliation = card.Affiliation;
-                    if (string.IsNullOrWhiteSpace(affiliation))
-                    {
-                        affiliation = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[1]/dl[2]/dd")?.InnerText ?? card.Affiliation;
-                    }
-
-                    //refactor this later
-
-                    atk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? string.Empty;
-                    def = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? string.Empty;
-
-                    trait = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[1]/dl[4]/dd")?.InnerText ?? string.Empty;
-
-                    var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[3]/p")?.InnerHtml ?? string.Empty);
-                    filteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
-
-                    if (card.CustomParm.BothSides)
-                    {
-                        secondAtk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? string.Empty;
-                        secondDef = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? string.Empty;
-                        var secondDesc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[3]/p")?.InnerHtml ?? string.Empty);
-
-                        altFilteredDesc = Regex.Replace(secondDesc, "<.*?>", string.Empty).Trim();
-
-                        altTrait = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[1]/dl[4]/dd")?.InnerText ?? string.Empty;
-                    }
-
-                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { atk, def, filteredDesc, trait, secondAtk, secondDef, altFilteredDesc, altTrait });
-
-                    return;
+                    affiliation = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[1]/dl[2]/dd")?.InnerText ?? card.Affiliation;
                 }
-                else
+
+                //refactor this later
+
+                atk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? string.Empty;
+                def = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? string.Empty;
+
+                trait = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[1]/dl[4]/dd")?.InnerText ?? string.Empty;
+
+                var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[3]/p")?.InnerHtml ?? string.Empty);
+                filteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
+
+                if (card.CustomParm.BothSides)
                 {
-                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { "", "" });
-                    return;
+                    secondAtk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? string.Empty;
+                    secondDef = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? string.Empty;
+                    var secondDesc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[3]/p")?.InnerHtml ?? string.Empty);
+
+                    altFilteredDesc = Regex.Replace(secondDesc, "<.*?>", string.Empty).Trim();
+
+                    altTrait = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[1]/dl[4]/dd")?.InnerText ?? string.Empty;
                 }
+
+                CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { atk, def, filteredDesc, trait, secondAtk, secondDef, altFilteredDesc, altTrait });
+
+                return;
+            }
+            else
+            {
+                CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { "", "" });
+                return;
             }
         }
 
