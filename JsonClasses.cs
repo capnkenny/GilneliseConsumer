@@ -29,6 +29,9 @@ namespace SVEDB_Extract
         [JsonPropertyName("affiliation")]
         public string Affiliation { get; set; }
 
+        [JsonPropertyName("trait")]
+        public string Trait { get; set; }
+
         [JsonPropertyName("width")]
         public int Width { get; set; }
 

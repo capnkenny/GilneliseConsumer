@@ -22,6 +22,9 @@ namespace SVEDB_Extract
         [JsonPropertyName("class")]
         public string Class { get; set; }
 
+        [JsonPropertyName("trait")]
+        public string Trait { get; set; }
+
         [JsonPropertyName("name")]
         public string Name { get; set; }
 
@@ -61,17 +64,23 @@ namespace SVEDB_Extract
         [JsonPropertyName("altDescription")]
         public string AltDescription { get; set; }
 
+        [JsonPropertyName("altTrait")]
+        public string AltTrait { get; set; }
+
 
 
         public static explicit operator OutputCard(Card c)
         {
             int atk = -1;
             int def = -1;
+            string trait = c.Trait;
+            string desc = string.Empty;
+            string affiliation = c.Affiliation;
+
             int altAtk = -1;
             int altDef = -1;
-            string desc = string.Empty;
             string altDesc = string.Empty;
-            string affiliation = c.Affiliation;
+            string altTrait = string.Empty;
 
             CardMetaData.Metadata.TryGetValue(c.CardNumber, out string[]? meta);
             if (meta != null)
@@ -82,11 +91,13 @@ namespace SVEDB_Extract
                 if (meta.Length >= 3)
                 {
                     desc = meta[2];
+                    trait = meta[3];
 
-                    _ = int.TryParse(meta[3], out altAtk);
-                    _ = int.TryParse(meta[4], out altDef);
+                    _ = int.TryParse(meta[4], out altAtk);
+                    _ = int.TryParse(meta[5], out altDef);
 
-                    altDesc = meta[5];
+                    altDesc = meta[6];
+                    altTrait = meta[7];
                 }
             }
 
@@ -97,6 +108,7 @@ namespace SVEDB_Extract
                 CardNumber = c.CardNumber.Split('-')[1],
                 Kind = c.CardKind.Replace("\u30FB", "").Replace(" / ", "").Replace(" \\ ", ""),
                 Class = c.Affiliation,
+                Trait = trait,
                 Name = c.Name,
                 ImgUrl = $"https://en.shadowverse-evolve.com/wordpress/wp-content/images/cardlist/{c.Img}",
                 Cost = c.GParam.G0,
@@ -109,7 +121,8 @@ namespace SVEDB_Extract
                 Description = desc,
                 AltDescription = altDesc,
                 AltAttack = altAtk,
-                AltDefense = altDef
+                AltDefense = altDef,
+                AltTrait = altTrait,
             };
         }
 

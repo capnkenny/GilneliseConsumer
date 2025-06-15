@@ -1,4 +1,5 @@
 ﻿using HtmlAgilityPack;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -171,10 +172,12 @@ namespace SVEDB_Extract
 
                     string atk = string.Empty;
                     string def = string.Empty;
+                    string trait = string.Empty;
                     string filteredDesc = string.Empty;
                     string secondAtk = string.Empty;
                     string secondDef = string.Empty;
                     string altFilteredDesc = string.Empty;
+                    string altTrait = string.Empty;
 
                     string affiliation = card.Affiliation;
                     if (string.IsNullOrWhiteSpace(affiliation))
@@ -184,23 +187,26 @@ namespace SVEDB_Extract
 
                     //refactor this later
 
-                    atk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? "";
-                    def = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? "";
+                    atk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? string.Empty;
+                    def = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? string.Empty;
 
+                    trait = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[1]/dl[4]/dd")?.InnerText ?? string.Empty;
 
-                    var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[3]/p")?.InnerHtml ?? "");
+                    var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[3]/p")?.InnerHtml ?? string.Empty);
                     filteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
 
                     if (card.CustomParm.BothSides)
                     {
-                        secondAtk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? "";
-                        secondDef = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? "";
-                        var secondDesc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[3]/p")?.InnerHtml ?? "");
+                        secondAtk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? string.Empty;
+                        secondDef = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? string.Empty;
+                        var secondDesc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[3]/p")?.InnerHtml ?? string.Empty);
 
                         altFilteredDesc = Regex.Replace(secondDesc, "<.*?>", string.Empty).Trim();
+
+                        altTrait = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[1]/dl[4]/dd")?.InnerText ?? string.Empty;
                     }
 
-                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { atk, def, filteredDesc, secondAtk, secondDef, altFilteredDesc });
+                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { atk, def, filteredDesc, trait, secondAtk, secondDef, altFilteredDesc, altTrait });
 
                     return;
                 }
@@ -235,6 +241,8 @@ namespace SVEDB_Extract
                     string secondAtk = string.Empty;
                     string secondDef = string.Empty;
                     string altFilteredDesc = string.Empty;
+                    string trait = string.Empty;
+                    string altTrait = string.Empty;
 
                     string affiliation = card.Affiliation;
                     if (string.IsNullOrWhiteSpace(affiliation))
@@ -244,23 +252,26 @@ namespace SVEDB_Extract
 
                     //refactor this later
 
-                    atk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? "";
-                    def = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? "";
+                    atk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? string.Empty;
+                    def = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? string.Empty;
 
+                    trait = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[1]/dl[4]/dd")?.InnerText ?? string.Empty;
 
-                    var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[3]/p")?.InnerHtml ?? "");
+                    var desc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[3]/p")?.InnerHtml ?? string.Empty);
                     filteredDesc = Regex.Replace(desc, "<.*?>", string.Empty).Trim();
 
                     if (card.CustomParm.BothSides)
                     {
-                        secondAtk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? "";
-                        secondDef = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? "";
-                        var secondDesc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[3]/p")?.InnerHtml ?? "");
+                        secondAtk = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[2]/text()")?.InnerText ?? string.Empty;
+                        secondDef = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[2]/span[3]/text()")?.InnerText ?? string.Empty;
+                        var secondDesc = SanitizeDescription(doc.DocumentNode?.SelectSingleNode("//*[@id=\"st-Body\"]/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[3]/p")?.InnerHtml ?? string.Empty);
 
                         altFilteredDesc = Regex.Replace(secondDesc, "<.*?>", string.Empty).Trim();
+
+                        altTrait = doc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div[2]/div[2]/div/div[1]/dl[4]/dd")?.InnerText ?? string.Empty;
                     }
 
-                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { atk, def, filteredDesc, secondAtk, secondDef, altFilteredDesc });
+                    CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { atk, def, filteredDesc, trait, secondAtk, secondDef, altFilteredDesc, altTrait });
 
                     return;
                 }
@@ -414,17 +425,19 @@ namespace SVEDB_Extract
                 htmlDoc.LoadHtml(tokenCardHtml);
                 if (!tokenCardHtml.StartsWith("<a"))
                     continue;
-                var cardId = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/p[1]")?.InnerText ?? "";
-                var cardTitle = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/p[2]")?.InnerText ?? "";
-                var cardCost = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[1]/span[4]/text()")?.InnerText ?? "";
-                var type = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[1]/span[1]")?.InnerText ?? "";
-                var attrib = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[1]/span[2]")?.InnerText ?? "";
+                var cardId = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/p[1]")?.InnerText ?? string.Empty;
+                var cardTitle = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/p[2]")?.InnerText ?? string.Empty;
+                var cardCost = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[1]/span[4]/text()")?.InnerText ?? string.Empty;
+                var type = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[1]/span[1]")?.InnerText ?? string.Empty;
+                var attrib = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[1]/span[2]")?.InnerText ?? string.Empty;
+                var trait = htmlDoc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[1]/dl[4]/dd")?.InnerText ?? string.Empty;
 
                 Card card = new()
                 {
                     CardNumber = cardId,
                     Name = cardTitle,
                     Affiliation = "",
+                    Trait = trait,
                     CardKind = type,
                     Max = -1,
                     GParam = new GParam {
