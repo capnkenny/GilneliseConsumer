@@ -1,4 +1,4 @@
-﻿using HtmlAgilityPack;
+using HtmlAgilityPack;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
@@ -39,7 +39,10 @@ namespace SVEDB_Extract
             "CSD02B",
             "CSD02C",
             "PR",
-            "GFB01"
+            "GFB01",
+            "SD02",
+            "SS02",
+            "BP10"
         };
 
         public Client()
