@@ -43,6 +43,7 @@ namespace SVEDB_Extract
             "SD02",
             "SS02",
             "BP10",
+            "GFD01",
             "GFD02"
         };
 
@@ -434,6 +435,7 @@ namespace SVEDB_Extract
         }
     }
 }
+
 
 
 
