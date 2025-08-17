@@ -44,7 +44,8 @@ namespace SVEDB_Extract
             "SS02",
             "BP10",
             "GFD01",
-            "GFD02"
+            "GFD02",
+            "CSD03A"
         };
 
         public Client()
@@ -303,13 +304,13 @@ namespace SVEDB_Extract
 
         private void PrepareSiteHeaders(HttpRequestMessage request)
         {
-            request.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0");
+            request.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36");
             request.Headers.TryAddWithoutValidation("Accept", "*/*");
             request.Headers.TryAddWithoutValidation("Accept-Language", "en-US,en;q=0.5");
             request.Headers.TryAddWithoutValidation("Accept-Encoding", "gzip, deflate, br, zstd");
             request.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
             request.Headers.TryAddWithoutValidation("Connection", "keep-alive");
-            request.Headers.TryAddWithoutValidation("Referer", "https://en.shadowverse-evolve.com/cards/searchresults/?card_name=&format[0]=all&class[0]=all&title=&expansion_name=&cost[0]=all&card_kind[0]=Token&rare[0]=all&power_from=&power_to=&hp_from=&hp_to=&type=&ability=&keyword=&view=text&sort=old");
+            //request.Headers.TryAddWithoutValidation("Referer", "https://en.shadowverse-evolve.com/cards/searchresults/?card_name=&format[0]=all&class[0]=all&title=&expansion_name=&cost[0]=all&card_kind[0]=Token&rare[0]=all&power_from=&power_to=&hp_from=&hp_to=&type=&ability=&keyword=&view=text&sort=old");
             request.Headers.TryAddWithoutValidation("Sec-Fetch-Dest", "empty");
             request.Headers.TryAddWithoutValidation("Sec-Fetch-Mode", "no-cors");
             request.Headers.TryAddWithoutValidation("Sec-Fetch-Site", "same-origin");
@@ -317,7 +318,7 @@ namespace SVEDB_Extract
             request.Headers.TryAddWithoutValidation("Cache-Control", "no-cache");
             request.Headers.TryAddWithoutValidation("TE", "trailers");
             request.Headers.TryAddWithoutValidation("Priority", "u=4");
-            request.Headers.TryAddWithoutValidation("Cookie", "_ga=GA1.3.1547043965.1714064650; _ga_EPP06NTRCV=GS1.1.1719762921.14.1.1719763108.35.0.0; _ga=GA1.2.1547043965.1714064650; CookieConsent={stamp:%27Fj1+4fFNpTx6diBKlz1oDKUCQvJrog5l1a3dXGk7+DpDBcCjihWwZQ==%27%2Cnecessary:true%2Cpreferences:true%2Cstatistics:true%2Cmarketing:true%2Cmethod:%27explicit%27%2Cver:1%2Cutc:1746823276833%2Cregion:%27us-34%27}; cardlist_search_sort=old; cardlist_view=text");
+            //request.Headers.TryAddWithoutValidation("Cookie", "_ga=GA1.3.1547043965.1714064650; _ga_EPP06NTRCV=GS1.1.1719762921.14.1.1719763108.35.0.0; _ga=GA1.2.1547043965.1714064650; CookieConsent={stamp:%27Fj1+4fFNpTx6diBKlz1oDKUCQvJrog5l1a3dXGk7+DpDBcCjihWwZQ==%27%2Cnecessary:true%2Cpreferences:true%2Cstatistics:true%2Cmarketing:true%2Cmethod:%27explicit%27%2Cver:1%2Cutc:1746823276833%2Cregion:%27us-34%27}; cardlist_search_sort=old; cardlist_view=text");
 
         }
 
