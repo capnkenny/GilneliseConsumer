@@ -42,7 +42,8 @@ namespace SVEDB_Extract
             "GFB01",
             "SD02",
             "SS02",
-            "BP10"
+            "BP10",
+            "GFD02"
         };
 
         public Client()
@@ -433,6 +434,7 @@ namespace SVEDB_Extract
         }
     }
 }
+
 
 
 
