@@ -11,6 +11,7 @@ namespace SVEDB_Extract
     {
         private HttpClient client;
         private List<Card> cards;
+        private bool _ciMode = false;
 
         private const int PagesOfTokens = 12;
 
@@ -45,14 +46,16 @@ namespace SVEDB_Extract
             "GFD01",
             "GFD02",
             "CSD03A",
-            "CSD03B"
+            "CSD03B",
+            "CP03"
         };
 
-        public Client()
+        public Client(bool ciMode)
         {
             var clientHandler = new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate };
             client = new HttpClient(clientHandler);
             cards = new List<Card>();
+            _ciMode = ciMode;
         }
 
         public async Task<List<Card>> GetCards(string set)
