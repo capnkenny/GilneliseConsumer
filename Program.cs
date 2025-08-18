@@ -2,7 +2,7 @@
 using System.Text.Json;
 using SVEDB_Extract;
 
-Client c = new Client();
+bool ciMode = false;
 
 string? result = null;
 Console.WriteLine("Shadowverse Evolve Card DB Builder\n");
@@ -17,6 +17,7 @@ else if (args.Length == 1)
     if (args[0].Equals("ci"))
     {
         result = "A";
+        ciMode = true;
         Console.WriteLine("Running in CI mode...");
     }
     else
@@ -24,6 +25,8 @@ else if (args.Length == 1)
         result = args[0];
     }
 }
+
+Client c = new Client(ciMode);
 
 var cards = await c.GetCards(result ?? string.Empty);
 

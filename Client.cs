@@ -488,14 +488,19 @@ namespace SVEDB_Extract
 
                 var response = await _s3Client.ListObjectsV2Async(request);
 
+                if (response is not null && response.S3Objects is null)
+                {
+                    return [];
+                }
 
-                return [.. response.S3Objects.Select(obj => obj.Key.Replace(".png", ""))];
+
+                return [.. response!.S3Objects!.Select(obj => obj.Key.Replace(".png", ""))];
             }
             catch (Exception e)
             {
                 Console.WriteLine($"Error when fetching existing cards in S3: {e.Message}");
 
-                return new();
+                return [];
             }
         }
 

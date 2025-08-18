@@ -30,6 +30,10 @@ jobs:
 
             - run: dotnet run --property WarningLevel=0 ci
               name: Run SVEDB_Extract
+              env:
+                S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+                S3_ACCESS: ${{ secrets.S3_ACCESS }}
+                S3_SECRET: ${{ secrets.S3_SECRET }}
 
             - uses: qoomon/actions--setup-git@v1
               with:
