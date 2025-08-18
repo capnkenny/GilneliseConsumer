@@ -1,3 +1,6 @@
+using Amazon.Runtime;
+using Amazon.S3;
+using Amazon.S3.Model;
 using HtmlAgilityPack;
 using System.Net;
 using System.Net.Http.Headers;
@@ -12,6 +15,9 @@ namespace SVEDB_Extract
         private HttpClient client;
         private List<Card> cards;
         private bool _ciMode = false;
+        private readonly IAmazonS3 _s3Client;
+        private const string _bucketName = "evolvecdb";
+        private List<string> _existingKeysInBucket = new();
 
         private const int PagesOfTokens = 12;
 
@@ -56,6 +62,19 @@ namespace SVEDB_Extract
             client = new HttpClient(clientHandler);
             cards = new List<Card>();
             _ciMode = ciMode;
+
+            string s3_endpoint = Environment.GetEnvironmentVariable("S3_ENDPOINT") ?? string.Empty;
+            string s3_access_key = Environment.GetEnvironmentVariable("S3_ACCESS") ?? string.Empty;
+            string s3_secret_key = Environment.GetEnvironmentVariable("S3_SECRET") ?? string.Empty;
+
+            if (!string.IsNullOrEmpty(s3_secret_key))
+            {
+                var creds = new BasicAWSCredentials(s3_access_key, s3_secret_key);
+                _s3Client = new AmazonS3Client(creds, new AmazonS3Config()
+                {
+                    ServiceURL = s3_endpoint,
+                });
+            }
         }
 
         public async Task<List<Card>> GetCards(string set)
@@ -64,6 +83,12 @@ namespace SVEDB_Extract
             {
                 Console.WriteLine("Cannot get an unknown set of cards. Exiting..");
                 return null;
+            }
+
+            //check existing card list if needed
+            if (_ciMode && _s3Client is not null)
+            {
+                _existingKeysInBucket = await GetExistingCardsFromBucket();
             }
 
             if (set == "A")
@@ -155,7 +180,6 @@ namespace SVEDB_Extract
                 }
                 cards = cards.OrderBy((card) => card.CardNumber).ToList();
                 Console.WriteLine($"Retrieved all ({cardListCount}) cards for set {set}.");
-                
             }
 
             Console.WriteLine($"Total cards retrieved: {cards.Count()}");
@@ -165,7 +189,15 @@ namespace SVEDB_Extract
             foreach (var card in cards)
             {
                 await Task.Delay(100 + r.Next(0, 101));
-                await GetCardMetaData(client, card);    
+                await GetCardMetaData(client, card);
+                if (_ciMode && _s3Client is not null)
+                {
+                    //get the card image if needed
+                    if (!_existingKeysInBucket.Contains(card.CardNumber))
+                    {
+                        await UploadCardToCdn(card);
+                    }
+                }
             }
 
             Console.WriteLine(); // el oh el
@@ -255,6 +287,8 @@ namespace SVEDB_Extract
                 CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { "", "" });
                 return;
             }
+
+            //image lookup
         }
 
         private string SanitizeDescription(string cardDescriptionHtml)
@@ -429,9 +463,132 @@ namespace SVEDB_Extract
                 };
 
                 cardsToAdd.Add(card);
+
+                if (_ciMode && _s3Client is not null)
+                {
+                    //get the card image if needed
+                    if (!_existingKeysInBucket.Contains(card.CardNumber))
+                    {
+                        await UploadCardToCdn(card);
+                    }
+                }
             }
 
             return cardsToAdd;
+        }
+
+        private async Task<List<string>> GetExistingCardsFromBucket()
+        {
+            try
+            {
+                var request = new ListObjectsV2Request
+                {
+                    BucketName = _bucketName
+                };
+
+                var response = await _s3Client.ListObjectsV2Async(request);
+
+
+                return [.. response.S3Objects.Select(obj => obj.Key.Replace(".png", ""))];
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error when fetching existing cards in S3: {e.Message}");
+
+                return new();
+            }
+        }
+
+        private async Task UploadCardToCdn(Card card)
+        {
+            var request = new HttpRequestMessage
+            {
+                Method = HttpMethod.Get,
+                RequestUri = new Uri($"https://en.shadowverse-evolve.com/wordpress/wp-content/images/cardlist/{card.Img}"),
+            };
+
+            PrepareSiteHeaders(request);
+            Console.WriteLine($"\tUploading card image to S3 CDN for {card.CardNumber}...");
+
+            var response = await client.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                //Should be the raw png data decompressed by httpclient already
+                using (var stream = await response.Content.ReadAsStreamAsync())
+                {
+                    try
+                    {
+                        //just in case
+                        stream.Position = 0;
+
+                        var s3request = new PutObjectRequest
+                        {
+                            InputStream = stream,
+                            AutoResetStreamPosition = true,
+                            AutoCloseStream = false, //will handle by using stmt
+                            BucketName = _bucketName,
+                            DisablePayloadSigning = true, //cloudflare req
+                            DisableDefaultChecksumValidation = true, //cloudflare req
+                            Key = $"{card.CardNumber}.png"
+                        };
+
+                        var s3Reponse = await _s3Client.PutObjectAsync(s3request);
+                        Console.WriteLine($"\t\tUpload complete, receipt: {s3Reponse.ETag}");
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"\t\tCould not write image to CDN! Reason: {e.Message}");
+                    }
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(card.CustomParm.RevImage))
+            {
+                //BP08/BP08-SL03_URAEN.png",
+                string altImg = string.IsNullOrWhiteSpace(card.CustomParm.RevImage) ? string.Empty : card.CustomParm.RevImage.Split('/').First(str => str.Contains(".png"));
+                string altCardNum = altImg.Replace(".png", string.Empty);
+
+                Console.WriteLine($"\tUploading reverse card image to S3 CDN for {altCardNum}...");
+                request = new HttpRequestMessage
+                {
+                    Method = HttpMethod.Get,
+                    RequestUri = new Uri($"https://en.shadowverse-evolve.com/wordpress/wp-content/images/cardlist/{card.CustomParm.RevImage}"),
+                };
+
+                PrepareSiteHeaders(request);
+
+                response = await client.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    //Should be the raw png data decompressed by httpclient already
+                    using (var stream = await response.Content.ReadAsStreamAsync())
+                    {
+                        try
+                        {
+                            //just in case
+                            stream.Position = 0;
+
+                            var s3request = new PutObjectRequest
+                            {
+                                InputStream = stream,
+                                AutoResetStreamPosition = true,
+                                AutoCloseStream = false, //will handle by using stmt
+                                BucketName = _bucketName,
+                                DisablePayloadSigning = true, //cloudflare req
+                                DisableDefaultChecksumValidation = true, //cloudflare req
+                                Key = altImg
+                            };
+
+                            var s3Reponse = await _s3Client.PutObjectAsync(s3request);
+                            Console.WriteLine($"\t\tUpload complete, receipt: {s3Reponse.ETag}");
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine($"\t\tCould not write reverse image to CDN! Reason: {e.Message}");
+                        }
+                    }
+                }
+            }
         }
     }
 

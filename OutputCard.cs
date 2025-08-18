@@ -101,6 +101,9 @@ namespace SVEDB_Extract
                 }
             }
 
+            //BP08/BP08-SL03_URAEN.png",
+            string altImg = string.IsNullOrWhiteSpace(c.CustomParm.RevImage) ? string.Empty : c.CustomParm.RevImage.Split('/').First(str => str.Contains(".png"));
+
             return new()
             {
                 Id = c.CardNumber,
@@ -110,13 +113,13 @@ namespace SVEDB_Extract
                 Class = c.Affiliation,
                 Trait = trait,
                 Name = c.Name,
-                ImgUrl = $"https://en.shadowverse-evolve.com/wordpress/wp-content/images/cardlist/{c.Img}",
+                ImgUrl = $"https://evolvecdb.org/img/{c.CardNumber}.png",
                 Cost = c.GParam.G0,
                 LimitedToCount = c.Max,
                 Attack = atk,
                 Defense = def,
                 DoubleSided = c.CustomParm.BothSides,
-                AltImgUrl = string.IsNullOrWhiteSpace(c.CustomParm.RevImage) ? string.Empty : $"https://en.shadowverse-evolve.com/wordpress/wp-content/images/cardlist/{c.CustomParm.RevImage}",
+                AltImgUrl = string.IsNullOrWhiteSpace(c.CustomParm.RevImage) ? string.Empty : $"https://evolvecdb.org/img/{altImg}.png",
                 AltName = string.IsNullOrWhiteSpace(c.CustomParm.RevName) ? string.Empty : c.CustomParm.RevName,
                 Description = desc,
                 AltDescription = altDesc,
