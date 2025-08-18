@@ -1,5 +1,4 @@
 using HtmlAgilityPack;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -117,6 +116,7 @@ namespace SVEDB_Extract
                     
                 
                 List<Card> cardList = await response.Content.ReadFromJsonAsync<List<Card>>() ?? new();
+                int cardListCount = cardList.Count();
 
                 while (cardList.Count > 0)
                 {
@@ -145,12 +145,16 @@ namespace SVEDB_Extract
                     }
 
                     cardList = await response.Content.ReadFromJsonAsync<List<Card>>() ?? new List<Card>();
+                    if (cardList != null)
+                        cardListCount += cardList.Count();
 
                 }
                 cards = cards.OrderBy((card) => card.CardNumber).ToList();
-                Console.WriteLine($"Retrieved all ({cards.Count}) cards for set {set}.");
+                Console.WriteLine($"Retrieved all ({cardListCount}) cards for set {set}.");
                 
             }
+
+            Console.WriteLine($"Total cards retrieved: {cards.Count()}");
 
             Random r = new();
 
@@ -173,8 +177,10 @@ namespace SVEDB_Extract
             var request = new HttpRequestMessage
             {
                 Method = HttpMethod.Get,
-                RequestUri = new Uri($"https://en.shadowverse-evolve.com/cards/?cardno={card.CardNumber}"),
+                RequestUri = new Uri($"https://en.shadowverse-evolve.com/cards/?cardno={card.CardNumber}&view=image"),
             };
+
+            PrepareSiteHeaders(request);
 
             const string statusLookup = "<div class=\"status\">";
             var response = await client.SendAsync(request);
@@ -304,20 +310,24 @@ namespace SVEDB_Extract
 
         private void PrepareSiteHeaders(HttpRequestMessage request)
         {
+            request.Headers.Clear();
             request.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36");
-            request.Headers.TryAddWithoutValidation("Accept", "*/*");
+            request.Headers.TryAddWithoutValidation("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
             request.Headers.TryAddWithoutValidation("Accept-Language", "en-US,en;q=0.5");
             request.Headers.TryAddWithoutValidation("Accept-Encoding", "gzip, deflate, br, zstd");
-            request.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
+            //request.Headers.TryAddWithoutValidation("X-Requested-With", "XMLHttpRequest");
             request.Headers.TryAddWithoutValidation("Connection", "keep-alive");
-            //request.Headers.TryAddWithoutValidation("Referer", "https://en.shadowverse-evolve.com/cards/searchresults/?card_name=&format[0]=all&class[0]=all&title=&expansion_name=&cost[0]=all&card_kind[0]=Token&rare[0]=all&power_from=&power_to=&hp_from=&hp_to=&type=&ability=&keyword=&view=text&sort=old");
-            request.Headers.TryAddWithoutValidation("Sec-Fetch-Dest", "empty");
-            request.Headers.TryAddWithoutValidation("Sec-Fetch-Mode", "no-cors");
+            request.Headers.TryAddWithoutValidation("Host", "en.shadowverse-evolve.com");
+            request.Headers.TryAddWithoutValidation("Referer", "https://en.shadowverse-evolve.com/cards/searchresults/?expansion=CSD03A&view=image");
+            request.Headers.TryAddWithoutValidation("Sec-Fetch-Dest", "document");
+            request.Headers.TryAddWithoutValidation("Sec-Fetch-Mode", "navigate");
             request.Headers.TryAddWithoutValidation("Sec-Fetch-Site", "same-origin");
+            request.Headers.TryAddWithoutValidation("Sec-Fetch-User", "?1");
             request.Headers.TryAddWithoutValidation("Pragma", "no-cache");
             request.Headers.TryAddWithoutValidation("Cache-Control", "no-cache");
             request.Headers.TryAddWithoutValidation("TE", "trailers");
-            request.Headers.TryAddWithoutValidation("Priority", "u=4");
+            request.Headers.TryAddWithoutValidation("Priority", "u=0, i");
+            request.Headers.TryAddWithoutValidation("Upgrade-Insecure-Requests", "1");
             //request.Headers.TryAddWithoutValidation("Cookie", "_ga=GA1.3.1547043965.1714064650; _ga_EPP06NTRCV=GS1.1.1719762921.14.1.1719763108.35.0.0; _ga=GA1.2.1547043965.1714064650; CookieConsent={stamp:%27Fj1+4fFNpTx6diBKlz1oDKUCQvJrog5l1a3dXGk7+DpDBcCjihWwZQ==%27%2Cnecessary:true%2Cpreferences:true%2Cstatistics:true%2Cmarketing:true%2Cmethod:%27explicit%27%2Cver:1%2Cutc:1746823276833%2Cregion:%27us-34%27}; cardlist_search_sort=old; cardlist_view=text");
 
         }
