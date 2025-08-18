@@ -44,7 +44,8 @@ namespace SVEDB_Extract
             "BP10",
             "GFD01",
             "GFD02",
-            "CSD03A"
+            "CSD03A",
+            "CSD03B"
         };
 
         public Client()
