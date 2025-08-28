@@ -102,7 +102,7 @@ namespace SVEDB_Extract
             }
 
             //BP08/BP08-SL03_URAEN.png",
-            string altImg = string.IsNullOrWhiteSpace(c.CustomParm.RevImage) ? string.Empty : c.CustomParm.RevImage.Split('/').First(str => str.Contains(".png"));
+            string altImg = string.IsNullOrWhiteSpace(c.CustomParm.RevImage) ? string.Empty : c.CustomParm.RevImage.Split('/').First(str => str.Contains(".png")).Replace(".png", "");
 
             return new()
             {
