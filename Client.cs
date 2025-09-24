@@ -53,7 +53,8 @@ namespace SVEDB_Extract
             "GFD02",
             "CSD03A",
             "CSD03B",
-            "CP03"
+            "CP03",
+            "BP11"
         };
 
         public Client(bool ciMode)
