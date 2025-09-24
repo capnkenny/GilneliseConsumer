@@ -1,5 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using System.Text.Json;
+using Amazon.Runtime;
+using Amazon.S3;
 using SVEDB_Extract;
 
 bool ciMode = false;
@@ -26,7 +28,20 @@ else if (args.Length == 1)
     }
 }
 
-Client c = new Client(ciMode);
+string s3_endpoint = Environment.GetEnvironmentVariable("S3_ENDPOINT") ?? string.Empty;
+string s3_access_key = Environment.GetEnvironmentVariable("S3_ACCESS") ?? string.Empty;
+string s3_secret_key = Environment.GetEnvironmentVariable("S3_SECRET") ?? string.Empty;
+IAmazonS3 _s3Client = null;
+if (!string.IsNullOrEmpty(s3_secret_key))
+{
+    var creds = new BasicAWSCredentials(s3_access_key, s3_secret_key);
+    _s3Client = new AmazonS3Client(creds, new AmazonS3Config()
+    {
+        ServiceURL = s3_endpoint,
+    });
+}
+
+Client c = new Client(ciMode, _s3Client);
 
 var cards = await c.GetCards(result ?? string.Empty);
 

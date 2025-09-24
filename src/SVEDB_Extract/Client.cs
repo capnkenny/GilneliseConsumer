@@ -1,12 +1,15 @@
-using Amazon.Runtime;
+﻿using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using HtmlAgilityPack;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+
+[assembly: InternalsVisibleTo("SVEDB_Extract.Tests")]
 
 namespace SVEDB_Extract
 {
@@ -57,25 +60,13 @@ namespace SVEDB_Extract
             "BP11"
         };
 
-        public Client(bool ciMode)
+        public Client(bool ciMode, IAmazonS3 s3Client)
         {
             var clientHandler = new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate };
             client = new HttpClient(clientHandler);
             cards = new List<Card>();
             _ciMode = ciMode;
-
-            string s3_endpoint = Environment.GetEnvironmentVariable("S3_ENDPOINT") ?? string.Empty;
-            string s3_access_key = Environment.GetEnvironmentVariable("S3_ACCESS") ?? string.Empty;
-            string s3_secret_key = Environment.GetEnvironmentVariable("S3_SECRET") ?? string.Empty;
-
-            if (!string.IsNullOrEmpty(s3_secret_key))
-            {
-                var creds = new BasicAWSCredentials(s3_access_key, s3_secret_key);
-                _s3Client = new AmazonS3Client(creds, new AmazonS3Config()
-                {
-                    ServiceURL = s3_endpoint,
-                });
-            }
+            _s3Client = s3Client;
         }
 
         public async Task<List<Card>> GetCards(string set)
@@ -103,7 +94,7 @@ namespace SVEDB_Extract
             var setsToPull = assumedSets.Where(a => SupportedList.Contains(a.ToUpper()));
             if (setsToPull == null || setsToPull.Count() == 0)
                 throw new Exception("No sets to pull!");
-            
+
             return await GetCardsAsync(setsToPull.ToArray());
         }
 
@@ -123,7 +114,7 @@ namespace SVEDB_Extract
                 };
 
                 string json = JsonSerializer.Serialize(cardRequest);
-                
+
                 HttpRequestMessage request = new(HttpMethod.Post, "https://decklog-en.bushiroad.com/system/app/api/search/6");
                 PrepareNaviHeaders(request);
                 request.Content = new StringContent(json);
@@ -133,7 +124,7 @@ namespace SVEDB_Extract
                 int loop = 0;
                 while (!response.IsSuccessStatusCode)
                 {
-                    await Task.Delay(3000+loop);
+                    await Task.Delay(3000 + loop);
                     Console.WriteLine("Detected an issue retrieving the last response - waiting...");
                     request = new(HttpMethod.Post, "https://decklog-en.bushiroad.com/system/app/api/search/6");
                     PrepareNaviHeaders(request);
@@ -142,9 +133,9 @@ namespace SVEDB_Extract
                     response = await client.SendAsync(request);
                     loop += 100;
                 }
-                
-                    
-                
+
+
+
                 List<Card> cardList = await response.Content.ReadFromJsonAsync<List<Card>>() ?? new();
                 int cardListCount = cardList.Count();
 
@@ -194,9 +185,13 @@ namespace SVEDB_Extract
                 if (_ciMode && _s3Client is not null)
                 {
                     //get the card image if needed
-                    if (!_existingKeysInBucket.Contains(card.CardNumber))
+                    if (!_existingKeysInBucket.Any(key => key.Contains(card.CardNumber, StringComparison.InvariantCultureIgnoreCase)))
                     {
                         await UploadCardToCdn(card);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"\t\tImage for {card.CardNumber} already exists, skipping...");
                     }
                 }
             }
@@ -226,7 +221,7 @@ namespace SVEDB_Extract
             {
                 loop += 100;
                 Console.WriteLine($"Retrying metadata call for {card.CardNumber}...");
-                await Task.Delay(2500+loop);
+                await Task.Delay(2500 + loop);
                 request = new HttpRequestMessage
                 {
                     Method = HttpMethod.Get,
@@ -325,8 +320,8 @@ namespace SVEDB_Extract
                 .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_stand.png\" alt=\"[engage]\">", "[Engage]")
                 .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_lastword.png\" alt=\"[lastwords]\">", "[Last Words]")
                 .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_carrot.png\" alt=\"[feed]\">", "[Serve]")
-                .Replace ("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_q.png\" alt=\"[q]\">", "[Quick]")
-                .Replace ("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_ride.png\" alt=\"[ride]\">", "[Ride]")   //Cardfight Vanguard-specific icon, not released yet
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_q.png\" alt=\"[q]\">", "[Quick]")
+                .Replace("<img class=\"icon-square\" src=\"/wordpress/wp-content/images/texticon/icon_ride.png\" alt=\"[ride]\">", "[Ride]")   //Cardfight Vanguard-specific icon, not released yet
                 .Replace("  ", " ");
         }
 
@@ -379,7 +374,7 @@ namespace SVEDB_Extract
 
             HttpRequestMessage request = new(HttpMethod.Get, $"https://en.shadowverse-evolve.com/cards/searchresults_ex?card_name=&format%5B0%5D=all&class%5B0%5D=all&title=&expansion_name=&cost%5B0%5D=all&card_kind%5B0%5D=Token&rare%5B0%5D=all&power_from=&power_to=&hp_from=&hp_to=&type=&ability=&keyword=&view=text&page={page}&t={DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
             PrepareSiteHeaders(request);
-            
+
 
             HttpResponseMessage response = await client.SendAsync(request);
             try
@@ -398,7 +393,7 @@ namespace SVEDB_Extract
             }
 
             List<string> tokensToParse = [];
-            
+
             string html = await response.Content.ReadAsStringAsync();
             string[] brokenUpHtml = html.Split("<li class=\"ex-item\">");
             tokensToParse.AddRange(brokenUpHtml);
@@ -453,11 +448,12 @@ namespace SVEDB_Extract
                     Trait = trait,
                     CardKind = type,
                     Max = -1,
-                    GParam = new GParam {
-                    G0 = int.Parse(cardCost)
+                    GParam = new GParam
+                    {
+                        G0 = int.Parse(cardCost)
                     },
                     Img = $"{cardId.Split("-")[0]}/{cardId}.png",
-                    CustomParm = new CustomParam 
+                    CustomParm = new CustomParam
                     {
                         BothSides = false
                     },
@@ -468,9 +464,13 @@ namespace SVEDB_Extract
                 if (_ciMode && _s3Client is not null)
                 {
                     //get the card image if needed
-                    if (!_existingKeysInBucket.Contains(card.CardNumber))
+                    if (!_existingKeysInBucket.Any(key => key.Contains(card.CardNumber, StringComparison.InvariantCultureIgnoreCase)))
                     {
                         await UploadCardToCdn(card);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"\t\tImage for {card.CardNumber} already exists, skipping...");
                     }
                 }
             }
@@ -478,7 +478,7 @@ namespace SVEDB_Extract
             return cardsToAdd;
         }
 
-        private async Task<List<string>> GetExistingCardsFromBucket()
+        internal async Task<List<string>> GetExistingCardsFromBucket()
         {
             try
             {

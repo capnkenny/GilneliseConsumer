@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35431.28
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SVEDB_Extract", "SVEDB_Extract.csproj", "{EFDB25E1-B586-4A59-937E-980519899233}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SVEDB_Extract", "src\SVEDB_Extract\SVEDB_Extract.csproj", "{EFDB25E1-B586-4A59-937E-980519899233}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{2BE8673C-D5A0-418E-87B9-C72675D4B9D5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SVEDB_Extract.Tests", "tests\SVEDB_Extract.Tests\SVEDB_Extract.Tests.csproj", "{125A9EC9-BBCC-4A41-9CA7-67DECB1C5131}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,11 +19,18 @@ Global
 		{EFDB25E1-B586-4A59-937E-980519899233}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EFDB25E1-B586-4A59-937E-980519899233}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EFDB25E1-B586-4A59-937E-980519899233}.Release|Any CPU.Build.0 = Release|Any CPU
+		{125A9EC9-BBCC-4A41-9CA7-67DECB1C5131}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{125A9EC9-BBCC-4A41-9CA7-67DECB1C5131}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{125A9EC9-BBCC-4A41-9CA7-67DECB1C5131}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{125A9EC9-BBCC-4A41-9CA7-67DECB1C5131}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C981CD27-9DD3-4946-ADAD-479A3D04C17C}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{125A9EC9-BBCC-4A41-9CA7-67DECB1C5131} = {2BE8673C-D5A0-418E-87B9-C72675D4B9D5}
 	EndGlobalSection
 EndGlobal
