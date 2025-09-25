@@ -29,21 +29,18 @@ jobs:
               name: Remove old cards file
               shell: pwsh
 
-            - run: dotnet run --project ./src/SVEDB_Extract/SVEDB_Extract.csproj --property WarningLevel=0 BP01
+            - run: dotnet run --project ./src/SVEDB_Extract/SVEDB_Extract.csproj --property WarningLevel=0 ci
               name: Run SVEDB_Extract
               env:
                 S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
                 S3_ACCESS: ${{ secrets.S3_ACCESS }}
                 S3_SECRET: ${{ secrets.S3_SECRET }}
 
-            - run: ls
-              name: Show dir contents
-              shell: pwsh
-            # - uses: qoomon/actions--setup-git@v1
-            #   with:
-            #     user: committer
+            - uses: qoomon/actions--setup-git@v1
+              with:
+                user: committer
 
-            # - run: git add cards.json
-            # - run: git commit -m "Updating cards.json file"
-            # - run: git push
+            - run: git add cards.json
+            - run: git commit -m "Updating cards.json file"
+            - run: git push
 
