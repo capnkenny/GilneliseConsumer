@@ -1,8 +1,7 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Text.Json.Serialization;
 
-namespace SVEDB_Extract
+namespace Gilnelise.Consumer
 {
 
     public class OutputCard
