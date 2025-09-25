@@ -482,10 +482,13 @@ namespace SVEDB_Extract
         {
             try
             {
+                List<S3Object> keys = [];
+
                 Console.WriteLine("Fetching images from bucket...");
                 var request = new ListObjectsV2Request
                 {
-                    BucketName = _bucketName
+                    BucketName = _bucketName,
+                    MaxKeys = 1000
                 };
 
                 var response = await _s3Client.ListObjectsV2Async(request);
@@ -494,9 +497,24 @@ namespace SVEDB_Extract
                 {
                     return [];
                 }
+                else if (response is null)
+                {
+                    return [];
+                }
 
-                Console.WriteLine($"Found {response!.S3Objects!.Count} images");
-                return [.. response!.S3Objects!.Select(obj => obj.Key.Replace(".png", ""))];
+                keys.AddRange(response.S3Objects);
+                while (response!.IsTruncated is not null && response.IsTruncated.Value)
+                {
+                    request.ContinuationToken = response.NextContinuationToken;
+                    response = await _s3Client.ListObjectsV2Async(request);
+                    if (response is not null && response.S3Objects is not null)
+                    {
+                        keys.AddRange(response.S3Objects);
+                    }
+                }
+
+                Console.WriteLine($"Found {keys.Count} images");
+                return [.. keys.Select(obj => obj.Key.Replace(".png", ""))];
             }
             catch (Exception e)
             {
