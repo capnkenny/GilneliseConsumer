@@ -482,6 +482,7 @@ namespace SVEDB_Extract
         {
             try
             {
+                Console.WriteLine("Fetching images from bucket...");
                 var request = new ListObjectsV2Request
                 {
                     BucketName = _bucketName
@@ -494,7 +495,7 @@ namespace SVEDB_Extract
                     return [];
                 }
 
-
+                Console.WriteLine($"Found {response!.S3Objects!.Count} images");
                 return [.. response!.S3Objects!.Select(obj => obj.Key.Replace(".png", ""))];
             }
             catch (Exception e)
