@@ -1,4 +1,4 @@
-﻿using Amazon.S3;
+using Amazon.S3;
 using Amazon.S3.Model;
 using HtmlAgilityPack;
 using System.Net;
@@ -56,7 +56,8 @@ namespace Gilnelise.Consumer
             "CSD03A",
             "CSD03B",
             "CP03",
-            "BP11"
+            "BP11",
+            "SS01"
         };
 
         public Client(bool ciMode, IAmazonS3 s3Client)
