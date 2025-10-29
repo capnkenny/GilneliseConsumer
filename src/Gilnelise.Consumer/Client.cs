@@ -57,7 +57,8 @@ namespace Gilnelise.Consumer
             "CSD03B",
             "CP03",
             "BP11",
-            "SS01"
+            "SS01",
+            "SP01",
         };
 
         public Client(bool ciMode, IAmazonS3 s3Client)
