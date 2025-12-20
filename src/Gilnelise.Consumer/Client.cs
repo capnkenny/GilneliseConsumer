@@ -220,9 +220,12 @@ namespace Gilnelise.Consumer
             const string statusLookup = "<div class=\"status\">";
             var response = await client.SendAsync(request);
             int loop = 0;
-            while (response.StatusCode != HttpStatusCode.OK)
+            int loopCount = 0;
+            bool didReceive = true;
+            while (response.StatusCode != HttpStatusCode.OK && loopCount < 3)
             {
                 loop += 100;
+                loopCount++;
                 Console.WriteLine($"Retrying metadata call for {card.CardNumber}...");
                 await Task.Delay(2500 + loop);
                 request = new HttpRequestMessage
@@ -233,6 +236,11 @@ namespace Gilnelise.Consumer
                 response = await client.SendAsync(request);
             }
 
+            if(response.StatusCode != HttpStatusCode.OK)
+                didReceive = false;
+
+            if(didReceive)
+            {
             var body = await response.Content.ReadAsStringAsync();
 
             //<span class="heading heading-Power">Attack
@@ -280,6 +288,12 @@ namespace Gilnelise.Consumer
                 CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { atk, def, filteredDesc, trait, secondAtk, secondDef, altFilteredDesc, altTrait });
 
                 return;
+            }
+            else
+            {
+                CardMetaData.Metadata.TryAdd(card.CardNumber, new string[] { "", "" });
+                return;
+            }
             }
             else
             {
