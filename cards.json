@@ -55166,7 +55166,7 @@
     "description": "Banish each card on the field and in the EX area. Each player banishes the top 10 cards of their deck.",
     "atk": 0,
     "def": 0,
-    "limitedToCount": 3,
+    "limitedToCount": 1,
     "doubleSided": false,
     "altImgUrl": "",
     "altName": "",
