@@ -100593,7 +100593,7 @@
     "name": "Prudent General",
     "imgUrl": "https://evolvecdb.org/img/PR-311EN",
     "cost": -1,
-    "description": "Each Swordcraft token on your field has Rush.\nOn Evolve - Summon a Steelclad Knight token. Give each Steelclad Knight on your field Attack \u002B1/Defense \u002B1.",
+    "description": "Each Swordcraft token on your field has Rush.\r\nOn Evolve - Summon a Steelclad Knight token. Give each Steelclad Knight on your field Attack \u002B1/Defense \u002B1.",
     "atk": 4,
     "def": 4,
     "limitedToCount": 3,
