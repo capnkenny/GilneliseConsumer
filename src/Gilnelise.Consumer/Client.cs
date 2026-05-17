@@ -68,7 +68,8 @@ namespace Gilnelise.Consumer
 "SDD04",
 "SDD05",
 "SDD06",
-"BP16"
+"BP16",
+            "BP17"
         };
 
         public Client(bool ciMode, IAmazonS3 s3Client)
