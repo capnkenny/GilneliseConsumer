@@ -6,6 +6,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 [assembly: InternalsVisibleTo("Gilnelise.Consumer.Tests")]
@@ -97,7 +98,7 @@ namespace Gilnelise.Consumer
 
             if (set == "A")
             {
-                var cards = await GetCardsAsync(SupportedList);
+                var cards = await GetCardsAsync(await GetAvailableSets());
                 cards.AddRange(await GetTokenCardsAsync());
                 return cards;
             }
@@ -108,6 +109,50 @@ namespace Gilnelise.Consumer
                 throw new Exception("No sets to pull!");
 
             return await GetCardsAsync(setsToPull.ToArray());
+        }
+
+        private async Task<string[]> GetAvailableSets()
+        {
+            HttpRequestMessage request = new(HttpMethod.Post, "https://decklog-en.bushiroad.com/system/app/api/cardparam/6");
+            PrepareNaviHeaders(request);
+
+            HttpResponseMessage response = await client.SendAsync(request);
+            int loop = 0;
+            int count = 0;
+            while (!response.IsSuccessStatusCode)
+            {
+                await Task.Delay(3000 + loop);
+                Console.WriteLine("Detected an issue retrieving the last response - waiting...");
+                request = new(HttpMethod.Post, "https://decklog-en.bushiroad.com/system/app/api/cardparam/6");
+                PrepareNaviHeaders(request);
+                response = await client.SendAsync(request);
+                loop += 100;
+                count++;
+                if(count >= 3)
+                {
+                    Console.WriteLine("Could not get live card set list! Defaulting...");
+                    return SupportedList;
+                }
+            }
+
+            try
+            {
+                JsonNode? root = await JsonNode.ParseAsync(await response.Content.ReadAsStreamAsync());
+                if(root == null)
+                {
+                    Console.WriteLine("Could not get live card set list due to serialized list being null! Defaulting...");
+                    return SupportedList;    
+                }
+                JsonObject listOfExpansions = root!["expansion_name"]!.AsObject();
+                var listOfSets = listOfExpansions.Select(kvp => kvp.Key.ToUpperInvariant()).ToArray();
+                return listOfSets;
+            }
+            catch
+            {
+                Console.WriteLine("Could not get live card set list due to serialization error! Defaulting...");
+                return SupportedList;
+            }
+            
         }
 
         private async Task<List<Card>> GetCardsAsync(string[] sets)
@@ -145,8 +190,6 @@ namespace Gilnelise.Consumer
                     response = await client.SendAsync(request);
                     loop += 100;
                 }
-
-
 
                 List<Card> cardList = await response.Content.ReadFromJsonAsync<List<Card>>() ?? new();
                 int cardListCount = cardList.Count();
