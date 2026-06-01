@@ -113,6 +113,7 @@ namespace Gilnelise.Consumer
 
         private async Task<string[]> GetAvailableSets()
         {
+            Console.WriteLine("Fetching live expansion list...");
             HttpRequestMessage request = new(HttpMethod.Post, "https://decklog-en.bushiroad.com/system/app/api/cardparam/6");
             PrepareNaviHeaders(request);
 
@@ -143,8 +144,10 @@ namespace Gilnelise.Consumer
                     Console.WriteLine("Could not get live card set list due to serialized list being null! Defaulting...");
                     return SupportedList;    
                 }
+                Console.WriteLine("\t\t-- Got expansion list, parsing...");
                 JsonObject listOfExpansions = root!["expansion_name"]!.AsObject();
                 var listOfSets = listOfExpansions.Select(kvp => kvp.Key.ToUpperInvariant()).ToArray();
+                Console.WriteLine($"\t\t-- Found {listOfSets.Count()} expansions!");
                 return listOfSets;
             }
             catch
