@@ -511,6 +511,13 @@ namespace Gilnelise.Consumer
                 var type = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[1]/span[1]")?.InnerText ?? string.Empty;
                 var attrib = htmlDoc.DocumentNode?.SelectSingleNode("/a/div[2]/div[1]/span[2]")?.InnerText ?? string.Empty;
                 var trait = htmlDoc.DocumentNode?.SelectSingleNode("/html/body/div[1]/div[3]/div/div/div[2]/div[2]/div[1]/div/div[2]/div/div[1]/dl[4]/dd")?.InnerText ?? string.Empty;
+                int realCost = 0;
+
+                if (!int.TryParse(cardCost, out realCost))
+                {
+                    //reinit just in case cuz idr what happens here
+                    realCost = 0;
+                }
 
                 Card card = new()
                 {
@@ -522,7 +529,7 @@ namespace Gilnelise.Consumer
                     Max = -1,
                     GParam = new GParam
                     {
-                        G0 = int.Parse(cardCost)
+                        G0 = realCost
                     },
                     Img = $"{cardId.Split("-")[0]}/{cardId}.png",
                     CustomParm = new CustomParam
