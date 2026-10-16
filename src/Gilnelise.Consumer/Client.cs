@@ -22,7 +22,7 @@ namespace Gilnelise.Consumer
         private const string _bucketName = "evolvecdb";
         private List<string> _existingKeysInBucket = new();
 
-        private const int PagesOfTokens = 12;
+        private const int PagesOfTokens = 34;
 
         public static string[] SupportedList =
         {
